@@ -1,0 +1,7 @@
+findspark==2.0.1
+numpy==2.1.2
+py4j==0.10.9.7
+pyspark==3.5.3
+setuptools==75.1.0
+rasterio==1.4.2
+esy-osmfilter==1.0.11
