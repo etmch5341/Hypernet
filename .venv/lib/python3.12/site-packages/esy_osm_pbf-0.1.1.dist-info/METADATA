@@ -1,0 +1,106 @@
+Metadata-Version: 2.1
+Name: esy-osm-pbf
+Version: 0.1.1
+Summary: Low-level Python library to interact with OSM PBF files
+Author-email: Ontje Lünsdorf <ontje.luensdorf@dlr.de>
+License: MIT License
+        
+        Copyright (c) 2024, German Aerospace Center (DLR)
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in all
+        copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+        SOFTWARE.
+        
+        
+Project-URL: homepage, https://gitlab.com/dlr-ve-esy/esy-osm-pbf
+Keywords: OSM,OpenStreetMap,PBF,protobuf
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Education
+Classifier: Intended Audience :: Science/Research
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Natural Language :: English
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Scientific/Engineering
+Requires-Python: >=3.5
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: protobuf >=3.20
+Provides-Extra: dev
+Requires-Dist: pdoc ; extra == 'dev'
+
+`esy.osm.pbf` is a low-level Python library to interact with
+[OpenStreetMap](https://www.openstreetmap.org) data files in the [Protocol
+Buffers (PBF)](https://developers.google.com/protocol-buffers/) format.
+
+# Usage
+
+To count the amount of parks in the OpenStreetMap Andorra `.pbf` file (at least
+according to a copy from [geofabrik](https://www.geofabrik.de/)), do this:
+
+First download a copy of the andorra dataset:
+
+```python
+>>> import os, urllib.request
+>>> if not os.path.exists('andorra.osm.pbf'):
+...     filename, headers = urllib.request.urlretrieve(
+...         'https://download.geofabrik.de/europe/andorra-190101.osm.pbf',
+...         filename='andorra.osm.pbf'
+...     )
+
+```
+
+Open the file and iterate over all entry and count those with a tag `leisure`
+having a value of `park`.
+
+```python
+>>> import esy.osm.pbf
+>>> osm = esy.osm.pbf.File('andorra.osm.pbf')
+>>> len([entry for entry in osm if entry.tags.get('leisure') == 'park'])
+21
+
+```
+
+# Design, Development & Contributing
+
+Design and development notes are available in `esy.osm.pbf.test`.
+
+We would be happy to accept contributions via merge requests, but due to
+corporate policy we can only accept contributions if you have send us the signed
+[contributor license agreement](CLA.md).
+
+# Contact
+
+Please use the projects issue tracker to get in touch.
+
+# Team
+
+`esy.osm.pbf` is developed by the
+[DLR](https://www.dlr.de/EN/Home/home_node.html) Institute of
+[Networked Energy Systems](https://www.dlr.de/ve/en/desktopdefault.aspx/tabid-12472/21440_read-49440/)
+in the departement for
+[Energy Systems Analysis (ESY)](https://www.dlr.de/ve/en/desktopdefault.aspx/tabid-12471/21741_read-49802/).
+
+# Acknowledgements
+
+The authors would like to thank the Federal Government and the Heads of
+Government of the Länder, as well as the Joint Science Conference (GWK), for
+their funding and support within the framework of the NFDI4Ing consortium.
+Funded by the German Research Foundation (DFG) - project number 442146713.
