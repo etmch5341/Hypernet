@@ -1,4 +1,4 @@
-# Hypernet — Hyperloop route optimization for the Texas Triangle
+# Texas HyperNet — Hyperloop route optimization using A* for the Texas Triangle
 
 Overview
 --------
