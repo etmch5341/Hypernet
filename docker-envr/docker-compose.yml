@@ -7,9 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: osm-workspace
     volumes:
-      # Mount your modified esy-osmfilter directory to sync changes
-      - ./esy-osmfilter:/workspace/esy-osmfilter
-      # Mount a data directory for OSM files
+      # Mount the entire data directory (includes input and output subdirectories)
       - ./data:/workspace/data
       # Mount a shared directory for outputs
       - ./outputs:/workspace/outputs
