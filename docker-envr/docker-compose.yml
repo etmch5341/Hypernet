@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  osm-environment:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: osm-workspace
+    volumes:
+      # Mount your modified esy-osmfilter directory to sync changes
+      - ./esy-osmfilter:/workspace/esy-osmfilter
+      # Mount a data directory for OSM files
+      - ./data:/workspace/data
+      # Mount a shared directory for outputs
+      - ./outputs:/workspace/outputs
+      # Mount a scripts directory for your Python files
+      - ./scripts:/workspace/scripts
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    # Optional: Expose port for Jupyter notebook
+    ports:
+      - "8888:8888"
+    environment:
+      - PYTHONUNBUFFERED=1
