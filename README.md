@@ -1,4 +1,5 @@
 # Texas HyperNet — Hyperloop route optimization using A* for the Texas Triangle
+## Research Project under Texas Guadaloop (https://www.guadaloop.com/)
 
 Overview
 --------
