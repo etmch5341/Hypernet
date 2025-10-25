@@ -1,6 +1,8 @@
 # Texas HyperNet — Hyperloop route optimization using A* for the Texas Triangle
 ## Research Project under Texas Guadaloop (https://www.guadaloop.com/)
 
+![alt text](Title.png)
+
 Overview
 --------
 Hypernet builds an optimal hyperloop route across the Texas Triangle using a customized A* search algorithm with a multi-objective cost function. Instead of optimizing only distance, our approach evaluates candidate routes by combining real-world constraints such as track curvature, land grade, construction cost, and environmental impact. We design and tune a domain-specific heuristic so the A* search can balance these competing objectives and produce practical, low-cost, low-impact alignments.
