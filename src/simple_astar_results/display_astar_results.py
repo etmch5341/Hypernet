@@ -14,12 +14,12 @@ for (x, y) in path:
 plt.title("Final A* Path")
 plt.show()
 
-# import pickle
-# frames = pickle.load(open(".astar_sparse_frames.pkl","rb"))
-# import matplotlib.pyplot as plt
-# import numpy as np
+import pickle
+frames = pickle.load(open("./astar_output/astar_sparse_frames.pkl","rb"))
+import matplotlib.pyplot as plt
+import numpy as np
 
-# # road_bitmap must be in memory (load if saved)
+# road_bitmap must be in memory (load if saved)
 # for expansion, pts in frames:
 #     frame = np.zeros_like(road_bitmap)
 #     for (x, y) in pts:
@@ -32,25 +32,28 @@ plt.show()
 #     plt.show()
 
 
-# import matplotlib.pyplot as plt
-# from matplotlib.animation import FuncAnimation
-# import numpy as np
-# import pickle
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
+import numpy as np
+import pickle
+from PIL import Image # Make sure Pillow is installed
 
-# frames = pickle.load(open("./astar_sparse_frames.pkl","rb"))
-# road_bitmap = np.load("./road_bitmap.npz")
+frames = pickle.load(open("./astar_output/astar_sparse_frames.pkl","rb"))
+road_bitmap = np.load("./astar_output/road_bitmap.npz")["road_bitmap"]
 
-# fig, ax = plt.subplots(figsize=(8,8))
-# img = ax.imshow(road_bitmap, cmap="gray", origin="upper")
+fig, ax = plt.subplots(figsize=(8,8))
+img = ax.imshow(road_bitmap, cmap="gray", origin="upper")
 
-# def update(i):
-#     _, pts = frames[i]
-#     overlay = np.zeros_like(road_bitmap)
-#     for (x, y) in pts:
-#         overlay[x, y] = 1
-#     img.set_data(overlay)
-#     ax.set_title(f"Expansion frame {i}")
-#     return [img]
+def update(i):
+    _, pts = frames[i]
+    overlay = np.zeros_like(road_bitmap)
+    for (x, y) in pts:
+        overlay[x, y] = 1
+    img.set_data(overlay)
+    ax.set_title(f"Expansion frame {i}")
+    return [img]
 
-# ani = FuncAnimation(fig, update, frames=len(frames), interval=80)
-# plt.show()
+ani = FuncAnimation(fig, update, frames=len(frames), interval=80)
+plt.show()
+
+ani.save('sine_wave_animation.gif', writer='pillow', fps=30)

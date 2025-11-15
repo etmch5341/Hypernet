@@ -24,7 +24,7 @@ HEIGHT = 300
 ALLOW_DIAGONAL = True
 
 # How often to record a sparse "frame" of visited points (store lists of coords).
-FRAME_RECORD_INTERVAL = 5000  # raise to 10000+ to use less memory; set None to disable
+FRAME_RECORD_INTERVAL = 1000  # raise to 10000+ to use less memory; set None to disable
 
 # Cost on-road vs off-road
 ON_ROAD_COST = 1
