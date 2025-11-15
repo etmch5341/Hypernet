@@ -18,6 +18,17 @@ minx, miny, maxx, maxy = rasterio.features.bounds(geojson)
 transform = from_bounds(minx, miny, maxx, maxy, width, height)
 raster = rasterize(geometries, out_shape=(height, width), transform=transform, fill=0, dtype=np.uint8)
 
+# Pixel size in the X direction (longitude/easting)
+pixel_width = (maxx - minx) / width
+
+# Pixel size in the Y direction (latitude/northing)  
+pixel_height = (maxy - miny) / height
+
+print(f"Bounds: ({minx}, {miny}) to ({maxx}, {maxy})")
+print(f"Pixel width: {(maxx - minx) / width} degrees")
+print(f"Pixel height: {(maxy - miny) / height} degrees")
+print(f"Approximate pixel size: {(maxx - minx) / width * 111000} meters")  # rough conversion at this latitude
+
 # --- Rasterize Protected Areas ---
 protected_gdf = gpd.read_file("./data/output/LI/protected_areas.geojson")
 protected_bitmap = rasterize(
