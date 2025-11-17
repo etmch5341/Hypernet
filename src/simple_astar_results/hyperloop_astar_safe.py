@@ -15,6 +15,8 @@ import pickle
 # File paths (keep your original names)
 ROADS_GEOJSON = "./LI_roads.geojson"
 PROTECTED_GEOJSON = "./protected_areas.geojson"
+# ROADS_GEOJSON = "./data/austin-dallas/austin_dallas.geojson"
+# PROTECTED_GEOJSON = "./data/austin-dallas/envr_austin_dallas.geojson"
 
 # Raster resolution (reduce to reduce memory/time). Change if you need more detail.
 WIDTH = 300   # default smaller than 500
@@ -225,6 +227,11 @@ def main():
         "Malbun": [9.607783557623662, 47.10286302280241],
         "Balzers": [9.497583388657375, 47.066238854375655]
     }
+    # point_map = {
+    #     "Austin": [-97.73967335952074, 30.277001707654122],
+    #     "Dallas": [-96.7970, 32.7767],
+    #     "Fort Worth": [-97.3308, 32.7555]
+    # }
 
     goals = []
     for lon, lat in point_map.values():
