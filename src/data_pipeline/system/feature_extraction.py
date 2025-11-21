@@ -156,7 +156,7 @@ def rasterize_geometries(resolution: float,
     print(f"Pixel height: {pixel_height} meters")
     
     _display_raster_geographic(raster, minx, miny, maxx, maxy, 
-                          title="Road Network (EPSG:3083 Coordinate System)")
+                          title=f"Road Network ({target_crs} Coordinate System)")
     
     return raster
 
