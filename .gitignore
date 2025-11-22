@@ -1,3 +1,4 @@
 /data
 .venv
 /geoai_tests/naip_data
+myenv/

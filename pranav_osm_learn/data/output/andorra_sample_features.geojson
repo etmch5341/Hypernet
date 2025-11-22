@@ -1,0 +1,162 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            1.59055,
+            42.5419679
+          ],
+          [
+            1.590638,
+            42.5419359
+          ],
+          [
+            1.5905965,
+            42.541951
+          ]
+        ]
+      },
+      "properties": {
+        "waterway": "stream",
+        "name": "Andorran Stream",
+        "feature_type": "waterway"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            1.4916137,
+            42.6368531
+          ],
+          [
+            1.4921678,
+            42.6368772
+          ],
+          [
+            1.4925051,
+            42.6369174
+          ],
+          [
+            1.4927058,
+            42.636821
+          ]
+        ]
+      },
+      "properties": {
+        "waterway": "river",
+        "name": "Valira River Segment",
+        "feature_type": "waterway"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              1.523,
+              42.6265
+            ],
+            [
+              1.5235,
+              42.6265
+            ],
+            [
+              1.5235,
+              42.626
+            ],
+            [
+              1.523,
+              42.626
+            ],
+            [
+              1.523,
+              42.6265
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "natural": "water",
+        "name": "Small Lake",
+        "feature_type": "water_body"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              1.521,
+              42.507
+            ],
+            [
+              1.5215,
+              42.507
+            ],
+            [
+              1.5215,
+              42.5065
+            ],
+            [
+              1.521,
+              42.5065
+            ],
+            [
+              1.521,
+              42.507
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "building": "house",
+        "feature_type": "building"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [
+              1.522,
+              42.508
+            ],
+            [
+              1.523,
+              42.508
+            ],
+            [
+              1.523,
+              42.507
+            ],
+            [
+              1.522,
+              42.507
+            ],
+            [
+              1.522,
+              42.508
+            ]
+          ]
+        ]
+      },
+      "properties": {
+        "building": "commercial",
+        "feature_type": "building"
+      }
+    }
+  ]
+}

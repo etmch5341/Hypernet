@@ -1,0 +1,163 @@
+Overview OSM data
+===========
+Nodes:                            17126
+Ways:                              2034
+Relations:                            0
+===========
+
+
+
+
+Tag Count Relations:
+============
+total:                                          0
+============
+
+
+Tag Count Ways:
+============
+total:                                      11637
+============
+highway                                      2034
+name                                         1893
+surface                                      1569
+maxspeed                                     1509
+source:maxspeed                               716
+lit                                           586
+oneway                                        455
+lanes                                         397
+cycleway:both                                 372
+bicycle                                       222
+foot                                          218
+smoothness                                    183
+motorcar                                      146
+motorcycle                                    146
+ref                                            98
+bridge                                         86
+layer                                          81
+cycleway                                       75
+lanes:backward                                 72
+sidewalk                                       66
+source                                         54
+lanes:forward                                  48
+access                                         45
+junction                                       42
+cycleway:right                                 38
+maxspeed:type                                  33
+tracktype                                      31
+turn:lanes:forward                             30
+turn:lanes:backward                            29
+busway                                         25
+motor_vehicle                                  24
+is_in                                          22
+maxspeed:forward                               16
+horse                                          16
+maxspeed:backward                              15
+cycleway:left                                  14
+access:conditional                             13
+embankment                                     12
+created_by                                     12
+hgv                                            11
+width                                          11
+priority_road                                   9
+incline                                         9
+traffic_calming                                 9
+vehicle                                         8
+FIXME                                           8
+lanes:bus:backward                              7
+zone:maxspeed                                   7
+access:motor_vehicle                            7
+parking:lane:both                               7
+cutting                                         6
+sac_scale                                       6
+bus:lanes:backward                              6
+access:lanes:backward                           6
+fixme                                           5
+change:lanes:forward                            4
+change:lanes:backward                           4
+turn:lanes                                      4
+noname                                          4
+note                                            4
+maxheight                                       3
+tunnel                                          3
+cycleway:both:segregated                        3
+mtb:scale                                       3
+trail_visibility                                3
+hiking                                          3
+parking:lane:left                               3
+access:lanes                                    2
+bus:lanes                                       2
+undefined                                       2
+oneway:bicycle                                  2
+oneway:motor_vehicle                            2
+segregated                                      2
+delivery                                        2
+piste:lit                                       2
+piste:type                                      2
+cycleway:right:oneway                           2
+change:lanes                                    2
+maxweight                                       1
+maxwidth                                        1
+ski                                             1
+wheelchair                                      1
+ele                                             1
+service                                         1
+landuse                                         1
+bus                                             1
+parking:lane:right                              1
+
+
+Tag Count Nodes:
+============
+total:                                       2380
+============
+highway                                       599
+crossing                                      407
+name                                          297
+public_transport                              285
+bus                                           284
+tactile_paving                                161
+crossing_ref                                   63
+source                                         46
+created_by                                     35
+barrier                                        26
+foot                                           20
+bicycle                                        20
+noexit                                         19
+ele                                            12
+operator                                       10
+railway                                        10
+traffic_sign                                    7
+hiking                                          6
+information                                     6
+tourism                                         6
+uic_name                                        6
+uic_ref                                         6
+traffic_calming                                 6
+mtb                                             5
+horse                                           3
+motorcar                                        3
+motorcycle                                      3
+is_in                                           2
+wheelchair                                      2
+crossing:barrier                                2
+red_turn                                        2
+traffic_signals:direction                       2
+motor_vehicle                                   2
+surface                                         1
+note                                            1
+crossing:light                                  1
+access                                          1
+check_date                                      1
+access:motor_vehicle                            1
+bench                                           1
+covered                                         1
+shelter                                         1
+junction                                        1
+addr:city                                       1
+addr:street                                     1
+addr:country                                    1
+addr:postcode                                   1
+addr:housenumber                                1
+agricultural                                    1
+natural                                         1
