@@ -12,6 +12,10 @@ Contained in the `road_test_set.py` file you will find that the 3 test samples a
 
 NOTE: The above does not represent the actual stations. The stations will be shown below.
 
+## Downloading the GeoJson Files
+Since the geojson files are too large, find the `data` folder and download the geojson files. Then add these files to the `src/sample-test-set` directory.
+(Or you could ignore this step if you are just loading from the `.npz` file)
+
 ## How to Run
 `PYTHONPATH=./src python3 src/sample-test-set/road_test_set.py`
 
