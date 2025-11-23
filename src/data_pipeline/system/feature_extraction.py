@@ -143,6 +143,7 @@ def rasterize_geometries(resolution: float,
     # geometries = [(feature["geometry"], 1) for feature in geojson["features"]]
     
     # Create transformer from WGS84 to target CRS
+    # TODO: Should update to handle automatic crs detection using the crs_detection.py module
     transformer = Transformer.from_crs("EPSG:4326", target_crs, always_xy=True) #NOTE: EPSG:4326 is the default for pbf and osm data
     
     # Reproject geometries and prepare for rasterization
