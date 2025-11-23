@@ -86,6 +86,36 @@ def _display_raster_geographic(raster, minx, miny, maxx, maxy, title="Rasterized
     
     plt.tight_layout()
     plt.show()
+    
+def _display_raster_with_goals(raster, goal_points, title="Raster with Goal Points"):
+    """
+    Display the raster with goal points highlighted.
+    
+    Parameters:
+    - raster: numpy array representing the cost map
+    - goal_points: list of tuples (x, y, name) in pixel coordinates
+    - title: plot title
+    """
+    plt.figure(figsize=(12, 10))
+    
+    # Display the raster
+    # Use a colormap where goal points (value=2) will be clearly visible
+    plt.imshow(raster, cmap='viridis', interpolation='nearest')
+    plt.colorbar(label='Cost Value')
+    
+    # Overlay goal points with red markers
+    for x, y, name in goal_points:
+        plt.plot(x, y, 'r*', markersize=20, markeredgecolor='white', markeredgewidth=2)
+        plt.annotate(name, (x, y), xytext=(10, 10), textcoords='offset points',
+                    color='white', fontsize=12, fontweight='bold',
+                    bbox=dict(boxstyle='round,pad=0.5', facecolor='red', alpha=0.7))
+    
+    plt.title(title, fontsize=14, fontweight='bold')
+    plt.xlabel('X (pixels)')
+    plt.ylabel('Y (pixels)')
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
 
 def rasterize_geometries(resolution: float, 
                           geojson_input_path="", 
@@ -93,6 +123,8 @@ def rasterize_geometries(resolution: float,
                           bbox: Optional[Tuple[float, float, float, float]] = None) -> np.ndarray:
     """
     Helper function to rasterize geometries into a bitmap.
+    
+    NOTE: If bbox is None, bounds are calculated from the geometries. However, this can lead to high consumption of memory, so it is RECOMMENDED to provide a bbox.
     
     Args:
         resolution: Pixel resolution in meters
@@ -158,27 +190,94 @@ def rasterize_geometries(resolution: float,
     _display_raster_geographic(raster, minx, miny, maxx, maxy, 
                           title=f"Road Network ({target_crs} Coordinate System)")
     
-    return raster
+    return raster, width, height
 
+def add_goal_points_to_raster(raster, point_map, width, height, bbox, target_crs="EPSG:3083"):
+    """
+    Add goal points to the raster by converting lat/lon coordinates to pixel coordinates.
+    
+    Parameters:
+    - raster: numpy array representing the cost map
+    - point_map: dict mapping station names to [lon, lat] coordinates
+    - width: raster width in pixels
+    - height: raster height in pixels
+    - bbox: bounding box (min_lon, min_lat, max_lon, max_lat)
+    - target_crs: coordinate reference system for the raster
+    
+    Returns:
+    - raster: modified raster with goal points marked as 2
+    - goal_points: list of tuples (x, y, name) in pixel coordinates
+    """
+    from pyproj import Transformer
+    
+    goal_points = []
+    
+    # Create transformer from WGS84 to target CRS
+    transformer = Transformer.from_crs("EPSG:4326", target_crs, always_xy=True)
+    
+    # Transform bbox corners to get the extent in target CRS
+    min_x, min_y = transformer.transform(bbox[0], bbox[1])
+    max_x, max_y = transformer.transform(bbox[2], bbox[3])
+    
+    # Calculate pixel resolution
+    pixel_width = (max_x - min_x) / width
+    pixel_height = (max_y - min_y) / height
+    
+    # Process each goal point
+    for name, coords in point_map.items():
+        lon, lat = coords
+        
+        # Transform to target CRS
+        x_crs, y_crs = transformer.transform(lon, lat)
+        
+        # Convert to pixel coordinates
+        # Note: y is inverted because raster row 0 is at the top (max_y)
+        pixel_x = int((x_crs - min_x) / pixel_width)
+        pixel_y = int((max_y - y_crs) / pixel_height)
+        
+        # Check if point is within bounds
+        if 0 <= pixel_x < width and 0 <= pixel_y < height:
+            raster[pixel_y, pixel_x] = 2  # Mark as goal point
+            goal_points.append((pixel_x, pixel_y, name))
+            print(f"Added {name} at pixel ({pixel_x}, {pixel_y})")
+        else:
+            print(f"Warning: {name} at ({lon}, {lat}) is outside raster bounds")
+            
+    _display_raster_with_goals(raster, goal_points)
+    
+    return raster, goal_points
 
 # ============================================================================
 # BASE FEATURES
 # ============================================================================
 
-def extract_road_network(bbox: Tuple[float, float, float, float], resolution: float, pbf_input_path= "", output_path="") -> np.ndarray:
+def extract_road_network(bbox: Tuple[float, float, float, float], resolution: float, target_crs: str = "EPSG:3083", geojson_input_path = "", pbf_input_path= "", output_path="") -> np.ndarray:
     """
     Extract road and rail network bitmap.
     
     Args:
-        bbox: Bounding box (min_lon, min_lat, max_lon, max_lat)
+        bbox: Bounding box (min_lon, min_lat, max_lon, max_lat) - Set to None if using geojson_input_path
         resolution: Pixel resolution in meters
+        target_crs: Target CRS for rasterization (default: Texas Albers)
+        geojson_input_path: Path to input GeoJSON file - must include filename in path
         pbf_input_path: Path to input data source (PBF format) - must include filename in path
         output_path: Path to save geojson output - must include filename in path
     Returns:
         2D binary array (1 = road/rail exists, 0 = no road/rail)
     """
+    
+    # If GeoJSON input is provided, rasterize directly
+    if geojson_input_path != "":
+        raster, width, height = rasterize_geometries(bbox=bbox, resolution=resolution, geojson_input_path=geojson_input_path, target_crs=target_crs)
+        return raster, width, height
+    
+    # If GeoJSON input not provided, process from PBF input
+    # Validate input paths
     if pbf_input_path == "":
         raise ValueError("pbf_input_path must be provided.")
+    
+    if output_path == "":
+        raise ValueError("output_path must be provided.")
     
     # Process into GeoJSON using osmfilter
     prefilter = {
@@ -229,9 +328,9 @@ def extract_road_network(bbox: Tuple[float, float, float, float], resolution: fl
     )
     
     # Rasterize the exported GeoJSON
-    road_bitmap = rasterize_geometries(bbox, resolution, geojson_input_path=output_path)
+    road_bitmap, width, height = rasterize_geometries(bbox=bbox, resolution=resolution, geojson_input_path=output_path, target_crs=target_crs)
     
-    return road_bitmap
+    return road_bitmap, width, height
    
 
 # ============================================================================
