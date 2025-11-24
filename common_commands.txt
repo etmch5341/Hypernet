@@ -1,4 +1,0 @@
-ls
-cd [PATH]
-cd .. 
-python3 [./filename]
