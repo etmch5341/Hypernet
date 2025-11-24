@@ -46,6 +46,9 @@ To see how to load, run the following command:
 
 Running on the docker envr, the images will be saved in `/outputs` since you are exec'd into the docker container and will not display the matplot plots.
 
+Run the following command to see the overlay onto the basemap/satelite imagery:
+`PYTHONPATH=./src python3 src/sample-test-set/load_npz_raster_basemap.py`
+
 ## Note on Using the Docker Container
 (Update 11/22/25)
 The src folder is now setup to be mounted on the conatiner. So rebuild and you can now just work within the src folder. 
