@@ -119,7 +119,7 @@ def _display_raster_with_goals(raster, goal_points, title="Raster with Goal Poin
 
 def rasterize_geometries(resolution: float, 
                           geojson_input_path="", 
-                          target_crs: str = "EPSG:3083",  # Texas Centric Albers Equal Area
+                          target_crs: str = DEFAULT_CRS_TX_ALBERS,  # Texas Centric Albers Equal Area
                           bbox: Optional[Tuple[float, float, float, float]] = None) -> np.ndarray:
     """
     Helper function to rasterize geometries into a bitmap.
@@ -144,7 +144,7 @@ def rasterize_geometries(resolution: float,
     
     # Create transformer from WGS84 to target CRS
     # TODO: Should update to handle automatic crs detection using the crs_detection.py module
-    transformer = Transformer.from_crs("EPSG:4326", target_crs, always_xy=True) #NOTE: EPSG:4326 is the default for pbf and osm data
+    transformer = Transformer.from_crs(DEFAULT_CRS_OSM, target_crs, always_xy=True) #NOTE: EPSG:4326 is the default for pbf and osm data
     
     # Reproject geometries and prepare for rasterization
     geometries = []
@@ -193,7 +193,7 @@ def rasterize_geometries(resolution: float,
     
     return raster, width, height
 
-def add_goal_points_to_raster(raster, point_map, width, height, bbox, target_crs="EPSG:3083"):
+def add_goal_points_to_raster(raster, point_map, width, height, bbox, target_crs=DEFAULT_CRS_TX_ALBERS):
     """
     Add goal points to the raster by converting lat/lon coordinates to pixel coordinates.
     
@@ -214,7 +214,7 @@ def add_goal_points_to_raster(raster, point_map, width, height, bbox, target_crs
     goal_points = []
     
     # Create transformer from WGS84 to target CRS
-    transformer = Transformer.from_crs("EPSG:4326", target_crs, always_xy=True)
+    transformer = Transformer.from_crs(DEFAULT_CRS_OSM, target_crs, always_xy=True)
     
     # Transform bbox corners to get the extent in target CRS
     min_x, min_y = transformer.transform(bbox[0], bbox[1])
@@ -252,7 +252,7 @@ def add_goal_points_to_raster(raster, point_map, width, height, bbox, target_crs
 # BASE FEATURES
 # ============================================================================
 
-def extract_road_network(bbox: Tuple[float, float, float, float], resolution: float, target_crs: str = "EPSG:3083", geojson_input_path = "", pbf_input_path= "", output_path="") -> np.ndarray:
+def extract_road_network(bbox: Tuple[float, float, float, float], resolution: float, target_crs: str = DEFAULT_CRS_TX_ALBERS, geojson_input_path = "", pbf_input_path= "", output_path="") -> np.ndarray:
     """
     Extract road and rail network bitmap.
     
