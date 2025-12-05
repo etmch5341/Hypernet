@@ -13,6 +13,8 @@ services:
       - ./outputs:/workspace/outputs
       # Mount a scripts directory for your Python files
       - ./scripts:/workspace/scripts
+      # Mount the src directory from parent directory
+      - ../src:/workspace/src
     working_dir: /workspace
     stdin_open: true
     tty: true

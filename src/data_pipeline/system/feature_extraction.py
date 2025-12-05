@@ -86,13 +86,463 @@ def _display_raster_geographic(raster, minx, miny, maxx, maxy, title="Rasterized
     
     plt.tight_layout()
     plt.show()
+    
+def _get_road_colormap(style='neon_cyan'):
+    """
+    Get predefined colormaps for road visualization.
+    
+    Available styles:
+    - 'neon_cyan': Bright cyan roads (great contrast on satellite)
+    - 'hot_pink': Magenta/hot pink roads
+    - 'electric_yellow': Bright yellow roads
+    - 'lime': Bright lime green roads
+    - 'orange': Orange roads
+    - 'white': White roads (classic look)
+    - 'gradient_red': Red gradient (thicker = more red)
+    """
+    from matplotlib.colors import ListedColormap, LinearSegmentedColormap
+    
+    styles = {
+        'neon_cyan': ['none', '#00FFFF'],
+        'hot_pink': ['none', '#FF1493'],
+        'electric_yellow': ['none', '#FFFF00'],
+        'lime': ['none', '#00FF00'],
+        'orange': ['none', '#FF8C00'],
+        'white': ['none', '#FFFFFF'],
+        'royal_blue': ['none', '#4169E1'],
+        'red': ['none', '#FF0000'],
+    }
+    
+    if style in styles:
+        return ListedColormap(styles[style], name=style, N=2)
+    else:
+        # Default to cyan
+        return ListedColormap(styles['neon_cyan'], name='default', N=2)
+    
+def _display_raster_with_satellite(raster, minx, miny, maxx, maxy, 
+                                    target_crs=DEFAULT_CRS_TX_ALBERS,
+                                    title="Rasterized Data with Satellite Background",
+                                    raster_alpha=0.8,
+                                    basemap_alpha=1.0,
+                                    color_style='neon_cyan',
+                                    basemap_style='light'):  # New parameter
+    """
+    Display raster overlaid on basemap background.
+    
+    Args:
+        raster: 2D numpy array
+        minx, miny, maxx, maxy: Bounds in projected CRS (meters)
+        target_crs: CRS of the raster data
+        title: Plot title
+        raster_alpha: Transparency of raster overlay (0=transparent, 1=opaque)
+        basemap_alpha: Transparency of basemap (0=transparent, 1=opaque)
+        color_style: Color style for roads
+        basemap_style: 'light', 'satellite', 'streets', or 'dark'
+    """
+    import contextily as ctx
+    
+    fig, ax = plt.subplots(figsize=(14, 10))
+    
+    ax.set_xlim(minx, maxx)
+    ax.set_ylim(miny, maxy)
+    
+    # Define basemap providers based on style
+    basemap_options = {
+        'light': [
+            ("CartoDB Positron", ctx.providers.CartoDB.Positron),
+            ("OpenStreetMap", ctx.providers.OpenStreetMap.Mapnik),
+        ],
+        'satellite': [
+            ("Esri WorldImagery", ctx.providers.Esri.WorldImagery),
+        ],
+        'streets': [
+            ("OpenStreetMap", ctx.providers.OpenStreetMap.Mapnik),
+            ("CartoDB Voyager", ctx.providers.CartoDB.Voyager),
+        ],
+        'dark': [
+            ("CartoDB Dark Matter", ctx.providers.CartoDB.DarkMatter),
+        ]
+    }
+    
+    # Get the provider list for the selected style
+    basemap_providers = basemap_options.get(basemap_style, basemap_options['light'])
+    
+    basemap_loaded = False
+    for provider_name, provider in basemap_providers:
+        try:
+            print(f"Attempting to load {provider_name} basemap...")
+            ctx.add_basemap(ax, 
+                           crs=target_crs,
+                           source=provider,
+                           alpha=basemap_alpha,
+                           zoom='auto',
+                           attribution=False)
+            print(f"Successfully loaded {provider_name}")
+            basemap_loaded = True
+            break
+        except Exception as e:
+            print(f"Could not load {provider_name}: {e}")
+            continue
+    
+    if not basemap_loaded:
+        print("Warning: No basemap could be loaded. Displaying raster only with gray background.")
+        ax.set_facecolor('#e0e0e0')
+    
+    # Get the colormap for the selected style
+    cmap = _get_road_colormap(color_style)
+    
+    im = ax.imshow(raster, 
+                   cmap=cmap,
+                   origin='upper',
+                   extent=[minx, maxx, miny, maxy],
+                   interpolation='nearest',
+                   alpha=raster_alpha,
+                   vmin=-0.5,
+                   vmax=1.5)
+    
+    plt.colorbar(im, ax=ax, label='Road Network', pad=0.02, ticks=[0, 1])
+    ax.set_xlabel('Easting (meters)', fontsize=11)
+    ax.set_ylabel('Northing (meters)', fontsize=11)
+    ax.set_title(title, fontsize=13, fontweight='bold')
+    ax.grid(True, alpha=0.3, color='gray', linewidth=0.5)
+    ax.ticklabel_format(style='plain', useOffset=False)
+    
+    plt.tight_layout()
+    plt.show()
+    
+def _display_raster_with_goals(raster, goal_points, title="Raster with Goal Points"):
+    """
+    Display the raster with goal points highlighted.
+    
+    Parameters:
+    - raster: numpy array representing the cost map
+    - goal_points: list of tuples (x, y, name) in pixel coordinates
+    - title: plot title
+    """
+    plt.figure(figsize=(12, 10))
+    
+    # Display the raster
+    # Use a colormap where goal points (value=2) will be clearly visible
+    plt.imshow(raster, cmap='viridis', interpolation='nearest')
+    plt.colorbar(label='Cost Value')
+    
+    # Overlay goal points with red markers
+    for x, y, name in goal_points:
+        plt.plot(x, y, 'r*', markersize=20, markeredgecolor='white', markeredgewidth=2)
+        plt.annotate(name, (x, y), xytext=(10, 10), textcoords='offset points',
+                    color='white', fontsize=12, fontweight='bold',
+                    bbox=dict(boxstyle='round,pad=0.5', facecolor='red', alpha=0.7))
+    
+    plt.title(title, fontsize=14, fontweight='bold')
+    plt.xlabel('X (pixels)')
+    plt.ylabel('Y (pixels)')
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
+    
+def _display_raster_with_goals_and_basemap(raster, goal_points, minx, miny, maxx, maxy,
+                                           target_crs=DEFAULT_CRS_TX_ALBERS,
+                                           title="Road Network with Goal Points",
+                                           raster_alpha=0.85,
+                                           basemap_alpha=1.0,
+                                           color_style='neon_cyan',
+                                           basemap_style='light',
+                                           goal_marker='*',
+                                           goal_size=400,
+                                           goal_color='red'):
+    """
+    Display raster with goal points overlaid on basemap background.
+    
+    Args:
+        raster: 2D numpy array
+        goal_points: list of tuples (pixel_x, pixel_y, name)
+        minx, miny, maxx, maxy: Bounds in projected CRS (meters)
+        target_crs: CRS of the raster data
+        title: Plot title
+        raster_alpha: Transparency of raster overlay (0=transparent, 1=opaque)
+        basemap_alpha: Transparency of basemap (0=transparent, 1=opaque)
+        color_style: Color style for roads
+        basemap_style: 'light', 'satellite', 'streets', or 'dark'
+        goal_marker: Marker style ('*', 'o', 's', 'D', '^', 'v')
+        goal_size: Size of goal markers
+        goal_color: Color of goal markers ('red', 'yellow', 'lime', 'cyan', etc.)
+    """
+    import contextily as ctx
+    
+    fig, ax = plt.subplots(figsize=(14, 10))
+    
+    ax.set_xlim(minx, maxx)
+    ax.set_ylim(miny, maxy)
+    
+    # Define basemap providers based on style
+    basemap_options = {
+        'light': [
+            ("CartoDB Positron", ctx.providers.CartoDB.Positron),
+            ("OpenStreetMap", ctx.providers.OpenStreetMap.Mapnik),
+        ],
+        'satellite': [
+            ("Esri WorldImagery", ctx.providers.Esri.WorldImagery),
+        ],
+        'streets': [
+            ("OpenStreetMap", ctx.providers.OpenStreetMap.Mapnik),
+            ("CartoDB Voyager", ctx.providers.CartoDB.Voyager),
+        ],
+        'dark': [
+            ("CartoDB Dark Matter", ctx.providers.CartoDB.DarkMatter),
+        ]
+    }
+    
+    # Load basemap
+    basemap_providers = basemap_options.get(basemap_style, basemap_options['light'])
+    basemap_loaded = False
+    for provider_name, provider in basemap_providers:
+        try:
+            print(f"Attempting to load {provider_name} basemap...")
+            ctx.add_basemap(ax, 
+                           crs=target_crs,
+                           source=provider,
+                           alpha=basemap_alpha,
+                           zoom='auto',
+                           attribution=False)
+            print(f"Successfully loaded {provider_name}")
+            basemap_loaded = True
+            break
+        except Exception as e:
+            print(f"Could not load {provider_name}: {e}")
+            continue
+    
+    if not basemap_loaded:
+        print("Warning: No basemap could be loaded. Displaying raster only with gray background.")
+        ax.set_facecolor('#e0e0e0')
+    
+    # Get the colormap for roads
+    cmap = _get_road_colormap(color_style)
+    
+    # Display raster
+    im = ax.imshow(raster, 
+                   cmap=cmap,
+                   origin='upper',
+                   extent=[minx, maxx, miny, maxy],
+                   interpolation='nearest',
+                   alpha=raster_alpha,
+                   vmin=-0.5,
+                   vmax=2.5)  # Extended range to accommodate goal points (value=2)
+    
+    # Convert pixel coordinates to geographic coordinates for plotting
+    width = raster.shape[1]
+    height = raster.shape[0]
+    pixel_width = (maxx - minx) / width
+    pixel_height = (maxy - miny) / height
+    
+    # Plot goal points
+    for pixel_x, pixel_y, name in goal_points:
+        # Convert pixel coordinates back to geographic coordinates
+        geo_x = minx + (pixel_x + 0.5) * pixel_width
+        geo_y = maxy - (pixel_y + 0.5) * pixel_height
+        
+        # Plot marker
+        ax.scatter(geo_x, geo_y, 
+                  marker=goal_marker, 
+                  s=goal_size, 
+                  c=goal_color,
+                  edgecolors='white', 
+                  linewidths=2.5,
+                  zorder=5,  # Ensure markers appear on top
+                  alpha=0.9)
+        
+        # Add label
+        ax.annotate(name, 
+                   (geo_x, geo_y), 
+                   xytext=(10, 10), 
+                   textcoords='offset points',
+                   color='white', 
+                   fontsize=11, 
+                   fontweight='bold',
+                   bbox=dict(boxstyle='round,pad=0.5', 
+                           facecolor=goal_color, 
+                           edgecolor='white',
+                           linewidth=2,
+                           alpha=0.85),
+                   zorder=6)
+    
+    plt.colorbar(im, ax=ax, label='Road Network', pad=0.02)
+    ax.set_xlabel('Easting (meters)', fontsize=11)
+    ax.set_ylabel('Northing (meters)', fontsize=11)
+    ax.set_title(title, fontsize=13, fontweight='bold')
+    ax.grid(True, alpha=0.3, color='gray', linewidth=0.5)
+    ax.ticklabel_format(style='plain', useOffset=False)
+    
+    plt.tight_layout()
+    plt.show()
+    
+def display_raster_with_goals_and_basemap(raster, goal_points, bbox, target_crs,
+                                          title="Raster with Goal Points",
+                                          output_file=None,
+                                          raster_alpha=0.85,
+                                          basemap_alpha=1.0,
+                                          color_style='neon_cyan',
+                                          basemap_style='light',
+                                          goal_marker='*',
+                                          goal_size=400,
+                                          goal_color='red'):
+    """
+    Display raster with goal points overlaid on basemap background.
+    
+    Parameters:
+    - raster: numpy array representing the cost map
+    - goal_points: list of tuples (pixel_x, pixel_y, name) in pixel coordinates
+    - bbox: bounding box (min_lon, min_lat, max_lon, max_lat) in WGS84
+    - target_crs: CRS of the raster data
+    - title: plot title
+    - output_file: path to save the plot (if None, shows interactively)
+    - raster_alpha: Transparency of raster overlay (0=transparent, 1=opaque)
+    - basemap_alpha: Transparency of basemap (0=transparent, 1=opaque)
+    - color_style: Color style for roads
+    - basemap_style: 'light', 'satellite', 'streets', or 'dark'
+    - goal_marker: Marker style ('*', 'o', 's', 'D', '^', 'v')
+    - goal_size: Size of goal markers
+    - goal_color: Color of goal markers
+    """
+    import contextily as ctx
+    
+    # Transform bbox from WGS84 to target CRS
+    transformer = Transformer.from_crs(DEFAULT_CRS_OSM, target_crs, always_xy=True)
+    min_lon, min_lat, max_lon, max_lat = bbox
+    minx, miny = transformer.transform(min_lon, min_lat)
+    maxx, maxy = transformer.transform(max_lon, max_lat)
+    
+    fig, ax = plt.subplots(figsize=(14, 10))
+    
+    ax.set_xlim(minx, maxx)
+    ax.set_ylim(miny, maxy)
+    
+    # Define basemap providers based on style
+    basemap_options = {
+        'light': [
+            ("CartoDB Positron", ctx.providers.CartoDB.Positron),
+            ("OpenStreetMap", ctx.providers.OpenStreetMap.Mapnik),
+        ],
+        'satellite': [
+            ("Esri WorldImagery", ctx.providers.Esri.WorldImagery),
+        ],
+        'streets': [
+            ("OpenStreetMap", ctx.providers.OpenStreetMap.Mapnik),
+            ("CartoDB Voyager", ctx.providers.CartoDB.Voyager),
+        ],
+        'dark': [
+            ("CartoDB Dark Matter", ctx.providers.CartoDB.DarkMatter),
+        ]
+    }
+    
+    # Load basemap
+    basemap_providers = basemap_options.get(basemap_style, basemap_options['light'])
+    basemap_loaded = False
+    for provider_name, provider in basemap_providers:
+        try:
+            print(f"Attempting to load {provider_name} basemap...")
+            ctx.add_basemap(ax, 
+                           crs=target_crs,
+                           source=provider,
+                           alpha=basemap_alpha,
+                           zoom='auto',
+                           attribution=False)
+            print(f"Successfully loaded {provider_name}")
+            basemap_loaded = True
+            break
+        except Exception as e:
+            print(f"Could not load {provider_name}: {e}")
+            continue
+    
+    if not basemap_loaded:
+        print("Warning: No basemap could be loaded. Displaying raster only with gray background.")
+        ax.set_facecolor('#e0e0e0')
+    
+    # Define color schemes
+    color_schemes = {
+        'neon_cyan': ['none', '#00FFFF'],
+        'hot_pink': ['none', '#FF1493'],
+        'electric_yellow': ['none', '#FFFF00'],
+        'lime': ['none', '#00FF00'],
+        'orange': ['none', '#FF8C00'],
+        'white': ['none', '#FFFFFF'],
+        'royal_blue': ['none', '#4169E1'],
+    }
+    
+    colors = color_schemes.get(color_style, color_schemes['neon_cyan'])
+    cmap = ListedColormap(colors, name='road_cmap', N=2)
+    
+    # Display raster
+    im = ax.imshow(raster, 
+                   cmap=cmap,
+                   origin='upper',
+                   extent=[minx, maxx, miny, maxy],
+                   interpolation='nearest',
+                   alpha=raster_alpha,
+                   vmin=-0.5,
+                   vmax=2.5)
+    
+    # Convert pixel coordinates to geographic coordinates for plotting
+    width = raster.shape[1]
+    height = raster.shape[0]
+    pixel_width = (maxx - minx) / width
+    pixel_height = (maxy - miny) / height
+    
+    # Plot goal points
+    for pixel_x, pixel_y, name in goal_points:
+        # Convert pixel coordinates back to geographic coordinates
+        geo_x = minx + (pixel_x + 0.5) * pixel_width
+        geo_y = maxy - (pixel_y + 0.5) * pixel_height
+        
+        # Plot marker
+        ax.scatter(geo_x, geo_y, 
+                  marker=goal_marker, 
+                  s=goal_size, 
+                  c=goal_color,
+                  edgecolors='white', 
+                  linewidths=2.5,
+                  zorder=5,
+                  alpha=0.9)
+        
+        # Add label
+        ax.annotate(name, 
+                   (geo_x, geo_y), 
+                   xytext=(10, 10), 
+                   textcoords='offset points',
+                   color='white', 
+                   fontsize=11, 
+                   fontweight='bold',
+                   bbox=dict(boxstyle='round,pad=0.5', 
+                           facecolor=goal_color, 
+                           edgecolor='white',
+                           linewidth=2,
+                           alpha=0.85),
+                   zorder=6)
+    
+    plt.colorbar(im, ax=ax, label='Road Network', pad=0.02)
+    ax.set_xlabel('Easting (meters)', fontsize=11)
+    ax.set_ylabel('Northing (meters)', fontsize=11)
+    ax.set_title(title, fontsize=13, fontweight='bold')
+    ax.grid(True, alpha=0.3, color='gray', linewidth=0.5)
+    ax.ticklabel_format(style='plain', useOffset=False)
+    
+    plt.tight_layout()
+    
+    if output_file:
+        plt.savefig(output_file, dpi=150, bbox_inches='tight')
+        print(f"Plot saved to {output_file}")
+    else:
+        plt.show()
+    
+    plt.close()
 
 def rasterize_geometries(resolution: float, 
                           geojson_input_path="", 
-                          target_crs: str = "EPSG:3083",  # Texas Centric Albers Equal Area
+                          target_crs: str = DEFAULT_CRS_TX_ALBERS,  # Texas Centric Albers Equal Area
                           bbox: Optional[Tuple[float, float, float, float]] = None) -> np.ndarray:
     """
     Helper function to rasterize geometries into a bitmap.
+    
+    NOTE: If bbox is None, bounds are calculated from the geometries. However, this can lead to high consumption of memory, so it is RECOMMENDED to provide a bbox.
     
     Args:
         resolution: Pixel resolution in meters
@@ -111,7 +561,8 @@ def rasterize_geometries(resolution: float,
     # geometries = [(feature["geometry"], 1) for feature in geojson["features"]]
     
     # Create transformer from WGS84 to target CRS
-    transformer = Transformer.from_crs("EPSG:4326", target_crs, always_xy=True) #NOTE: EPSG:4326 is the default for pbf and osm data
+    # TODO: Should update to handle automatic crs detection using the crs_detection.py module
+    transformer = Transformer.from_crs(DEFAULT_CRS_OSM, target_crs, always_xy=True) #NOTE: EPSG:4326 is the default for pbf and osm data
     
     # Reproject geometries and prepare for rasterization
     geometries = []
@@ -155,30 +606,117 @@ def rasterize_geometries(resolution: float,
     print(f"Pixel width: {pixel_width} meters")
     print(f"Pixel height: {pixel_height} meters")
     
+    # Display standard raster
     _display_raster_geographic(raster, minx, miny, maxx, maxy, 
-                          title="Road Network (EPSG:3083 Coordinate System)")
+                          title=f"Road Network ({target_crs} Coordinate System)")
     
-    return raster
+    # Display raster with satellite background
+    _display_raster_with_satellite(raster, minx, miny, maxx, maxy,
+                               target_crs=target_crs,
+                               title=f"Road Network with Light Background ({target_crs})",
+                               basemap_style='satellite',  # Use light style
+                               color_style='red',
+                               raster_alpha=0.9,
+                               basemap_alpha=0.9)
+    
+    return raster, width, height
 
+def add_goal_points_to_raster(raster, point_map, width, height, bbox, target_crs=DEFAULT_CRS_TX_ALBERS):
+    """
+    Add goal points to the raster by converting lat/lon coordinates to pixel coordinates.
+    
+    Parameters:
+    - raster: numpy array representing the cost map
+    - point_map: dict mapping station names to [lon, lat] coordinates
+    - width: raster width in pixels
+    - height: raster height in pixels
+    - bbox: bounding box (min_lon, min_lat, max_lon, max_lat)
+    - target_crs: coordinate reference system for the raster
+    
+    Returns:
+    - raster: modified raster with goal points marked as 2
+    - goal_points: list of tuples (x, y, name) in pixel coordinates
+    """
+    from pyproj import Transformer
+    
+    goal_points = []
+    
+    # Create transformer from WGS84 to target CRS
+    transformer = Transformer.from_crs(DEFAULT_CRS_OSM, target_crs, always_xy=True)
+    
+    # Transform bbox corners to get the extent in target CRS
+    min_x, min_y = transformer.transform(bbox[0], bbox[1])
+    max_x, max_y = transformer.transform(bbox[2], bbox[3])
+    
+    # Calculate pixel resolution
+    pixel_width = (max_x - min_x) / width
+    pixel_height = (max_y - min_y) / height
+    
+    # Process each goal point
+    for name, coords in point_map.items():
+        lon, lat = coords
+        
+        # Transform to target CRS
+        x_crs, y_crs = transformer.transform(lon, lat)
+        
+        # Convert to pixel coordinates
+        # Note: y is inverted because raster row 0 is at the top (max_y)
+        pixel_x = int((x_crs - min_x) / pixel_width)
+        pixel_y = int((max_y - y_crs) / pixel_height)
+        
+        # Check if point is within bounds
+        if 0 <= pixel_x < width and 0 <= pixel_y < height:
+            raster[pixel_y, pixel_x] = 2  # Mark as goal point
+            goal_points.append((pixel_x, pixel_y, name))
+            print(f"Added {name} at pixel ({pixel_x}, {pixel_y})")
+        else:
+            print(f"Warning: {name} at ({lon}, {lat}) is outside raster bounds")
+            
+    _display_raster_with_goals(raster, goal_points)
+    
+    _display_raster_with_goals_and_basemap(raster, goal_points, 
+                                           min_x, min_y, max_x, max_y,
+                                           target_crs=target_crs,
+                                           basemap_style='light',
+                                           color_style='royal_blue',
+                                           raster_alpha=0.85,
+                                           goal_color='red',
+                                           goal_marker='*',
+                                           goal_size=400)
+    
+    return raster, goal_points
 
 # ============================================================================
 # BASE FEATURES
 # ============================================================================
 
-def extract_road_network(bbox: Tuple[float, float, float, float], resolution: float, pbf_input_path= "", output_path="") -> np.ndarray:
+def extract_road_network(bbox: Tuple[float, float, float, float], resolution: float, target_crs: str = DEFAULT_CRS_TX_ALBERS, geojson_input_path = "", pbf_input_path= "", output_path="") -> np.ndarray:
     """
     Extract road and rail network bitmap.
     
     Args:
-        bbox: Bounding box (min_lon, min_lat, max_lon, max_lat)
+        bbox: Bounding box (min_lon, min_lat, max_lon, max_lat) - Set to None if using geojson_input_path
         resolution: Pixel resolution in meters
+        target_crs: Target CRS for rasterization (default: Texas Albers)
+        geojson_input_path: Path to input GeoJSON file - must include filename in path
         pbf_input_path: Path to input data source (PBF format) - must include filename in path
         output_path: Path to save geojson output - must include filename in path
     Returns:
         2D binary array (1 = road/rail exists, 0 = no road/rail)
     """
+    
+    # If GeoJSON input is provided, rasterize directly
+    if geojson_input_path != "":
+        raster, width, height = rasterize_geometries(bbox=bbox, resolution=resolution, geojson_input_path=geojson_input_path, target_crs=target_crs)
+        return raster, width, height
+    
+    # If GeoJSON input not provided, process from PBF input
+    # Validate input paths
     if pbf_input_path == "":
         raise ValueError("pbf_input_path must be provided.")
+    
+    if output_path == "":
+        raise ValueError("output_path must be provided.")
     
     # Process into GeoJSON using osmfilter
     prefilter = {
@@ -229,9 +767,9 @@ def extract_road_network(bbox: Tuple[float, float, float, float], resolution: fl
     )
     
     # Rasterize the exported GeoJSON
-    road_bitmap = rasterize_geometries(bbox, resolution, geojson_input_path=output_path)
+    road_bitmap, width, height = rasterize_geometries(bbox=bbox, resolution=resolution, geojson_input_path=output_path, target_crs=target_crs)
     
-    return road_bitmap
+    return road_bitmap, width, height
    
 
 # ============================================================================

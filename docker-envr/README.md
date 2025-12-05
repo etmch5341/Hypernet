@@ -40,7 +40,7 @@ This will create a Docker image with:
 - Ubuntu 24.04 base
 - **Python 3.12.6** (exact version)
 - Osmium tools and libraries
-- esy-osmfilter from PyPI with **your 3 modified files** replacing the originals
+- esy-osmfilter from PyPI with **the 3 modified files** replacing the originals in the library
 - Packages from requirements.txt (if provided)
 - Additional useful packages (numpy, pandas, matplotlib, jupyter)
 
@@ -149,7 +149,7 @@ python3 ./my_script.py
 ## Modifying or Adding Files
 Mounting creates a bridge between your computer (host) and the Docker container. Think of it like a window between two rooms.
 
-Since the `./data`, `./outputs`, and `./scripts` are mounted (look at docker-compose.yml):
+Since the `./data`, `./outputs`, `./scripts`, and `../src` are mounted (look at docker-compose.yml):
 
 1. Files appear in both places - When you put a file in `./data/` on your computer, it's instantly visible at `/workspace/data/` inside the container
 
@@ -184,6 +184,9 @@ If you make changes to your modified Python files on your host machine:
 
 1. The changes are in the `modified_files/` directory
 2. Rebuild the container to apply the changes:
+
+## src mount (UPDATE: 11/22/25)
+The src path is mounted now so you can just work within src as well so you can use the normal features within docker.
 
 ```bash
 docker-compose down
