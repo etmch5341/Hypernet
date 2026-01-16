@@ -1,8 +1,10 @@
 /data
 .venv
 /geoai_tests/naip_data
+<<<<<<< HEAD
 myenv/
+=======
 /src/sample-test-set/austin_test.geojson
 /src/sample-test-set/portland_test.geojson
 /src/sample-test-set/seattle_test.geojson
-.DS_Store
+>>>>>>> origin/main

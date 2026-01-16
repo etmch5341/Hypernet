@@ -280,3 +280,4 @@ xxhash==3.6.0
 xyzservices==2025.4.0
 yarl==1.22.0
 zipp==3.21.0
+pymoo>=0.6.0

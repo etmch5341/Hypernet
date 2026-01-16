@@ -1,0 +1,342 @@
+[
+  {
+    "weights": {
+      "alpha": 0.9487280172905649,
+      "beta": 0.2964636973789062,
+      "gamma": 0.28671830707990875,
+      "name": "opt_0"
+    },
+    "objectives": {
+      "distance": 404.7350647362943,
+      "total_time": 10.460630585851408,
+      "total_turn": 1.5707985816512937,
+      "total_jerk": 3.141592632516369,
+      "iterations": 668,
+      "nodes_expanded": 667
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.9778147076248058,
+      "beta": 0.29504943791251415,
+      "gamma": 0.28563436876949966,
+      "name": "opt_1"
+    },
+    "objectives": {
+      "distance": 404.7350647362943,
+      "total_time": 10.460630585851408,
+      "total_turn": 1.5707985816512937,
+      "total_jerk": 3.141592632516369,
+      "iterations": 626,
+      "nodes_expanded": 625
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.9778147076248058,
+      "beta": 0.29504943791251415,
+      "gamma": 0.2858912449585567,
+      "name": "opt_2"
+    },
+    "objectives": {
+      "distance": 404.7350647362943,
+      "total_time": 10.460630585851408,
+      "total_turn": 1.5707985816512937,
+      "total_jerk": 3.141592632516369,
+      "iterations": 630,
+      "nodes_expanded": 629
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.9778147076248058,
+      "beta": 0.29504943791251415,
+      "gamma": 0.3004941047126154,
+      "name": "opt_3"
+    },
+    "objectives": {
+      "distance": 388.99494936611666,
+      "total_time": 11.125828278447864,
+      "total_turn": 2.3561959442586193,
+      "total_jerk": 3.9269907748403936,
+      "iterations": 412,
+      "nodes_expanded": 411
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.9796445089319904,
+      "beta": 0.2959986237867669,
+      "gamma": 0.29993952322348305,
+      "name": "opt_4"
+    },
+    "objectives": {
+      "distance": 388.99494936611666,
+      "total_time": 11.125828278447864,
+      "total_turn": 2.3561959442586193,
+      "total_jerk": 3.9269907748403936,
+      "iterations": 412,
+      "nodes_expanded": 411
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.9797626886045782,
+      "beta": 0.2959986237867669,
+      "gamma": 0.3000316166417134,
+      "name": "opt_5"
+    },
+    "objectives": {
+      "distance": 388.99494936611666,
+      "total_time": 11.125828278447864,
+      "total_turn": 2.3561959442586193,
+      "total_jerk": 3.9269907748403936,
+      "iterations": 412,
+      "nodes_expanded": 411
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.9801320545769009,
+      "beta": 0.001874374983057139,
+      "gamma": 0.2999850944150635,
+      "name": "opt_6"
+    },
+    "objectives": {
+      "distance": 388.99494936611666,
+      "total_time": 11.125828278447864,
+      "total_turn": 2.3561959442586193,
+      "total_jerk": 3.9269907748403936,
+      "iterations": 402,
+      "nodes_expanded": 401
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.982206856157091,
+      "beta": 0.10358694839745514,
+      "gamma": 0.2997746082909968,
+      "name": "opt_7"
+    },
+    "objectives": {
+      "distance": 388.99494936611666,
+      "total_time": 11.125828278447864,
+      "total_turn": 2.3561959442586193,
+      "total_jerk": 3.9269907748403936,
+      "iterations": 411,
+      "nodes_expanded": 410
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.982206856157091,
+      "beta": 0.10358694839745514,
+      "gamma": 0.2999987174307006,
+      "name": "opt_8"
+    },
+    "objectives": {
+      "distance": 388.99494936611666,
+      "total_time": 11.125828278447864,
+      "total_turn": 2.3561959442586193,
+      "total_jerk": 3.9269907748403936,
+      "iterations": 411,
+      "nodes_expanded": 410
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.9822116645316914,
+      "beta": 0.10349271057279029,
+      "gamma": 0.2999812363269935,
+      "name": "opt_9"
+    },
+    "objectives": {
+      "distance": 388.99494936611666,
+      "total_time": 11.125828278447864,
+      "total_turn": 2.3561959442586193,
+      "total_jerk": 3.9269907748403936,
+      "iterations": 411,
+      "nodes_expanded": 410
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.9822116645316914,
+      "beta": 0.10358694839745514,
+      "gamma": 0.2999987174307006,
+      "name": "opt_10"
+    },
+    "objectives": {
+      "distance": 388.99494936611666,
+      "total_time": 11.125828278447864,
+      "total_turn": 2.3561959442586193,
+      "total_jerk": 3.9269907748403936,
+      "iterations": 411,
+      "nodes_expanded": 410
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.9822116645316914,
+      "beta": 0.10939543486934618,
+      "gamma": 0.2938521602668479,
+      "name": "opt_11"
+    },
+    "objectives": {
+      "distance": 388.99494936611666,
+      "total_time": 11.125828278447864,
+      "total_turn": 2.3561959442586193,
+      "total_jerk": 3.9269907748403936,
+      "iterations": 405,
+      "nodes_expanded": 404
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.9822116645316914,
+      "beta": 0.1222371057060034,
+      "gamma": 0.29407626940655174,
+      "name": "opt_12"
+    },
+    "objectives": {
+      "distance": 388.99494936611666,
+      "total_time": 11.125828278447864,
+      "total_turn": 2.3561959442586193,
+      "total_jerk": 3.9269907748403936,
+      "iterations": 405,
+      "nodes_expanded": 404
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.9824255421972584,
+      "beta": 0.29504943791251415,
+      "gamma": 0.28563436876949966,
+      "name": "opt_13"
+    },
+    "objectives": {
+      "distance": 404.7350647362943,
+      "total_time": 10.460630585851408,
+      "total_turn": 1.5707985816512937,
+      "total_jerk": 3.141592632516369,
+      "iterations": 626,
+      "nodes_expanded": 625
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.9824884177558781,
+      "beta": 0.10283088491026374,
+      "gamma": 0.3000000366429631,
+      "name": "opt_14"
+    },
+    "objectives": {
+      "distance": 388.99494936611666,
+      "total_time": 11.125828278447864,
+      "total_turn": 2.3561959442586193,
+      "total_jerk": 3.9269907748403936,
+      "iterations": 411,
+      "nodes_expanded": 410
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.9825511824989238,
+      "beta": 0.05777456234822065,
+      "gamma": 0.3000000366429631,
+      "name": "opt_15"
+    },
+    "objectives": {
+      "distance": 388.99494936611666,
+      "total_time": 11.125828278447864,
+      "total_turn": 2.3561959442586193,
+      "total_jerk": 3.9269907748403936,
+      "iterations": 404,
+      "nodes_expanded": 403
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.9825571807194885,
+      "beta": 0.2856220630929528,
+      "gamma": 0.287653027429435,
+      "name": "opt_16"
+    },
+    "objectives": {
+      "distance": 404.7350647362943,
+      "total_time": 10.460630585851408,
+      "total_turn": 1.5707985816512937,
+      "total_jerk": 3.141592632516369,
+      "iterations": 700,
+      "nodes_expanded": 699
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.9838875794578975,
+      "beta": 0.2856220630929528,
+      "gamma": 0.29975215945862665,
+      "name": "opt_17"
+    },
+    "objectives": {
+      "distance": 388.99494936611666,
+      "total_time": 11.125828278447864,
+      "total_turn": 2.3561959442586193,
+      "total_jerk": 3.9269907748403936,
+      "iterations": 412,
+      "nodes_expanded": 411
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.9884033023515159,
+      "beta": 0.0013455765550692538,
+      "gamma": 0.3000058077884768,
+      "name": "opt_18"
+    },
+    "objectives": {
+      "distance": 388.99494936611666,
+      "total_time": 11.125828278447864,
+      "total_turn": 2.3561959442586193,
+      "total_jerk": 3.9269907748403936,
+      "iterations": 402,
+      "nodes_expanded": 401
+    },
+    "path_length": 362
+  },
+  {
+    "weights": {
+      "alpha": 0.9980884260326166,
+      "beta": 0.0014448085008803933,
+      "gamma": 0.29996422880125556,
+      "name": "opt_19"
+    },
+    "objectives": {
+      "distance": 388.99494936611666,
+      "total_time": 11.125828278447864,
+      "total_turn": 2.3561959442586193,
+      "total_jerk": 3.9269907748403936,
+      "iterations": 402,
+      "nodes_expanded": 401
+    },
+    "path_length": 362
+  }
+]

@@ -516,14 +516,19 @@ def load_hypernet_data(use_liechtenstein=True):
     )
     
     # Load and rasterize protected areas
-    protected_gdf = gpd.read_file(protected_path)
-    protected_bitmap = rasterize(
-        ((geom, 1) for geom in protected_gdf.geometry),
-        out_shape=(height, width),
-        transform=transform,
-        fill=0,
-        dtype=np.uint8
-    )
+    try:
+        protected_gdf = gpd.read_file(protected_path)
+        protected_bitmap = rasterize(
+            ((geom, 1) for geom in protected_gdf.geometry),
+            out_shape=(height, width),
+            transform=transform,
+            fill=0,
+            dtype=np.uint8
+        )
+    except Exception as e:
+        print(f"  ! Warning: Could not load protected areas ({e})")
+        print("    Proceeding with empty protection map.")
+        protected_bitmap = np.zeros((height, width), dtype=np.uint8)
     
     # Convert start and goal to pixel coordinates
     start_name = list(point_map.keys())[0]
