@@ -7,6 +7,7 @@ Based on your PG/OE specification document.
 """
 
 import json
+import os
 import numpy as np
 import rasterio
 from rasterio.features import rasterize
@@ -98,7 +99,7 @@ class HyperloopObjectives:
         if protected_bitmap[p_next[0], p_next[1]] == 1:
             cost *= 100.0  # Heavy penalty for protected areas
         elif road_bitmap[p_next[0], p_next[1]] == 0:
-            cost *= 2.0  # Penalty for off-road
+            return float('inf')  # Strict constraint: Must stay on road
         
         return cost
 
@@ -365,7 +366,7 @@ class APexSeeder:
         return results
     
     def visualize_seeds(self, output_dir='data/output/apex_results'):
-        """Visualize all seed paths"""
+        """Visualize all seed paths with improved aesthetics"""
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         
         if not self.seeds:
@@ -373,38 +374,57 @@ class APexSeeder:
             return
         
         # Plot all paths
-        fig, ax = plt.subplots(figsize=(12, 10))
+        fig, ax = plt.subplots(figsize=(12, 12))
+        ax.set_facecolor('#111111') # Dark background
         
-        # Show base map
-        ax.imshow(self.road_bitmap, cmap='gray', alpha=0.3, origin='upper')
+        # Show base map (Darkened)
+        # Using a slight blue tint for roads to look sci-fi
+        road_layer = np.zeros((*self.road_bitmap.shape, 4)) # RGBA
+        road_layer[self.road_bitmap > 0] = [0.2, 0.3, 0.4, 0.5] # Dark Blue-ish roads
+        ax.imshow(road_layer, origin='upper')
         
-        # Show protected areas in green
-        protected_overlay = np.ma.masked_where(
-            self.protected_bitmap == 0, 
-            self.protected_bitmap
-        )
-        ax.imshow(protected_overlay, cmap='Greens', alpha=0.3, origin='upper')
+        # Show protected areas (Red tint overlay)
+        if np.any(self.protected_bitmap):
+            protected_layer = np.zeros((*self.protected_bitmap.shape, 4))
+            protected_layer[self.protected_bitmap > 0] = [0.8, 0.2, 0.2, 0.3]
+            ax.imshow(protected_layer, origin='upper')
         
         # Plot each seed path
-        colors = plt.cm.rainbow(np.linspace(0, 1, len(self.seeds)))
-        for seed, color in zip(self.seeds, colors):
+        # Color based on Strategy: Red = FAST (High Alpha), Blue = SMOOTH (Low Alpha/High Beta)
+        for seed in self.seeds:
             path = seed['path']
+            weights = seed['weights']
+            
+            # Simple color interpolation
+            # Alpha 1.0 -> Red
+            # Alpha 0.0 -> Blue
+            alpha_val = weights.get('alpha', 0.5)
+            color = plt.cm.coolwarm(alpha_val)
+            
             xs = [p[1] for p in path]
             ys = [p[0] for p in path]
-            ax.plot(xs, ys, color=color, alpha=0.7, linewidth=2,
-                   label=f"{seed['weights']['name']}")
+            
+            # Draw line
+            ax.plot(xs, ys, color=color, alpha=0.6, linewidth=1.5)
+            
+        # Draw Start/Goal
+        ax.scatter(self.start_pos[1], self.start_pos[0], c='#00FF00', s=200, marker='*', label='Start', zorder=10)
+        ax.scatter(self.goal_pos[1], self.goal_pos[0], c='#FF00FF', s=200, marker='*', label='Goal', zorder=10)
         
-        # Mark start and goal
-        ax.plot(self.start_pos[1], self.start_pos[0], 'go', 
-               markersize=15, label='Start')
-        ax.plot(self.goal_pos[1], self.goal_pos[0], 'ro', 
-               markersize=15, label='Goal')
+        # Custom Legend
+        from matplotlib.lines import Line2D
+        custom_lines = [
+            Line2D([0], [0], color=plt.cm.coolwarm(1.0), lw=2),
+            Line2D([0], [0], color=plt.cm.coolwarm(0.0), lw=2)
+        ]
+        ax.legend(custom_lines, ['Fast (High Speed)', 'Smooth (High Comfort)'], loc='upper right', fontsize=10)
         
-        ax.set_title('A*pex Seed Solutions - All Paths', fontsize=16)
-        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=8)
+        ax.set_title('A*pex Seed Solutions: Hyperloop Corridors\nColor indicates Strategy', color='white', fontsize=14)
+        ax.tick_params(colors='white')
+        
         plt.tight_layout()
-        plt.savefig(f'{output_dir}/all_seed_paths.png', dpi=150, bbox_inches='tight')
-        print(f"\n✓ Saved path visualization to {output_dir}/all_seed_paths.png")
+        plt.savefig(f'{output_dir}/all_seed_paths.png', dpi=150, facecolor='#111111')
+        print(f"\n✓ Saved enhanced path visualization to {output_dir}/all_seed_paths.png")
         
         # Plot Pareto front
         self._plot_pareto_front(output_dir)
@@ -460,17 +480,45 @@ class APexSeeder:
         print(f"\n✓ Seeds saved to {output_path}")
 
 
-def load_hypernet_data(use_liechtenstein=True):
+def load_hypernet_data(use_liechtenstein=True, npz_path=None):
     """
-    Load data from Hypernet repository
+    Load data from Hypernet repository.
+    Supports loading from cached .npz files for speed.
     
     Args:
         use_liechtenstein: If True, use Liechtenstein test data.
-                          If False, use Texas data (requires preprocessing)
+        npz_path: Path to cached .npz file (optional). 
+                 If provided and exists -> load from it.
+                 If provided and missing -> generate and save to it.
     
     Returns:
         (road_bitmap, protected_bitmap, transform, start_pos, goal_pos)
     """
+    
+    # 1. Try loading from NPZ if it exists
+    if npz_path and os.path.exists(npz_path):
+        print(f"Loading cached map data from {npz_path}...")
+        try:
+            data = np.load(npz_path, allow_pickle=True)
+            road_bitmap = data['road_bitmap']
+            protected_bitmap = data['protected_bitmap']
+            transform = data['transform'] # Rasterio transform might need reconstruction depending on how numpy saves it
+            # Transform is usually an Affine object, need to ensure it restores correctly or is saved as array
+            # Simple hack: assume it saves/loads as object array or similar. 
+            # Reconstructing Affine from tuple/list if needed:
+            if isinstance(transform, np.ndarray):
+               from affine import Affine
+               transform = Affine(*transform)
+
+            start_pos = tuple(data['start_pos'])
+            goal_pos = tuple(data['goal_pos'])
+            
+            print(f"  ✓ Loaded road network: {road_bitmap.shape} raster (Cached)")
+            return road_bitmap, protected_bitmap, transform, start_pos, goal_pos
+        except Exception as e:
+            print(f"  ✗ Failed to load cache: {e}. Regenerating...")
+
+    # 2. Fallback to Generation (Existing Logic)
     if use_liechtenstein:
         # Liechtenstein test data (smaller, faster)
         road_path = "./data/output/LI/LI_roads.geojson"
@@ -482,7 +530,7 @@ def load_hypernet_data(use_liechtenstein=True):
             "Balzers": [9.497583388657375, 47.066238854375655]
         }
         
-        print("Loading Liechtenstein data...")
+        print("Loading Liechtenstein data (Generating from GeoJSON)...")
     else:
         # Texas data
         road_path = "./data/output/TX/austin_dallas.geojson"
@@ -493,7 +541,7 @@ def load_hypernet_data(use_liechtenstein=True):
             "Dallas": [-96.7970, 32.7767]
         }
         
-        print("Loading Texas data...")
+        print("Loading Texas data (Generating from GeoJSON)...")
     
     # Load road network
     with open(road_path) as f:
@@ -547,6 +595,23 @@ def load_hypernet_data(use_liechtenstein=True):
     print(f"  ✓ Loaded protected areas")
     print(f"  ✓ Start: {start_name} {start_pos}")
     print(f"  ✓ Goal: {goal_name} {goal_pos}")
+
+    # 3. Save to NPZ Cache if requested
+    if npz_path:
+        # Convert Affine to tuple for saving
+        # transform is an Affine object, we can save its coefficients
+        # But wait, numpy won't save Affine objects easily in savez without pickle allow=True which IS allowed above but ideally avoid.
+        # Let's save as list of 6 or 9 coefficients or just use pickle.
+        try:
+            np.savez(npz_path, 
+                     road_bitmap=road_bitmap, 
+                     protected_bitmap=protected_bitmap, 
+                     transform=np.array(transform), 
+                     start_pos=np.array(start_pos), 
+                     goal_pos=np.array(goal_pos))
+            print(f"  ✓ Saved cache to {npz_path}")
+        except Exception as e:
+            print(f"  ! Warning: Could not save cache: {e}")
     
     return road_bitmap, protected_bitmap, transform, start_pos, goal_pos
 

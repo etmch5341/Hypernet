@@ -84,8 +84,13 @@ def run_optimization(n_gen=20, pop_size=20):
     print("="*70)
 
     # 1. Load Data & Initialize Seeder
+    # Ensure output directory exists for cache
+    cache_dir = Path("data/output")
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    cache_path = cache_dir / "apex_cache_LI.npz"
+    
     road_bitmap, protected_bitmap, transform, start_pos, goal_pos = \
-        load_hypernet_data(use_liechtenstein=True)
+        load_hypernet_data(use_liechtenstein=True, npz_path=str(cache_path))
         
     seeder = APexSeeder(
         road_bitmap, 
@@ -175,7 +180,7 @@ def save_results(res, seeder, initial_seeds):
             })
             
     # Visualize
-    visualize_comparison(initial_seeds, opt_solutions, output_dir)
+    visualize_comparison(initial_seeds, opt_solutions, output_dir, seeder)
     
     # Save JSON
     serializable = []
@@ -192,7 +197,7 @@ def save_results(res, seeder, initial_seeds):
     print(f"✓ Results saved to {output_dir}")
 
 
-def visualize_comparison(seeds, optimized, output_dir):
+def visualize_comparison(seeds, optimized, output_dir, seeder=None):
     """Compare initial seeds vs optimized solutions"""
     
     # 1. Objective Space Projections
@@ -228,24 +233,37 @@ def visualize_comparison(seeds, optimized, output_dir):
     plt.savefig(f'{output_dir}/comparison_pareto.png', dpi=150)
     
     # 2. Path Visualization (Best Solutions)
-    # We can't plot ALL of them, maybe just the non-dominated ones?
-    # For now, let's plot all optimized ones
-    fig, ax = plt.subplots(figsize=(12, 10))
+    # Re-use the nice visualization logic
+    fig, ax = plt.subplots(figsize=(12, 12))
+    ax.set_facecolor('#111111')
     
+    # Show base map (Darkened)
+    if hasattr(seeder, 'road_bitmap'):
+        road_layer = np.zeros((*seeder.road_bitmap.shape, 4))
+        road_layer[seeder.road_bitmap > 0] = [0.2, 0.3, 0.4, 0.5]
+        ax.imshow(road_layer, origin='upper')
+        
+        if np.any(seeder.protected_bitmap):
+            protected_layer = np.zeros((*seeder.protected_bitmap.shape, 4))
+            protected_layer[seeder.protected_bitmap > 0] = [0.8, 0.2, 0.2, 0.3]
+            ax.imshow(protected_layer, origin='upper')
+
     # Plot paths
-    # We can't plot ALL of them, maybe just the non-dominated ones?
-    # For now, let's plot all optimized ones
-    fig, ax = plt.subplots(figsize=(12, 10))
-    
     for sol in optimized:
         path = sol['path']
+        weights = sol['weights']
+        
+        # Color strategy
+        alpha_val = weights.get('alpha', 0.5)
+        color = plt.cm.coolwarm(alpha_val)
+        
         xs = [p[1] for p in path]
         ys = [p[0] for p in path]
-        ax.plot(xs, ys, color='red', alpha=0.3, linewidth=1)
+        ax.plot(xs, ys, color=color, alpha=0.5, linewidth=1)
         
-    ax.invert_yaxis() # Match image coords
-    ax.set_title("Optimized Routes Overlay")
-    plt.savefig(f'{output_dir}/optimized_paths.png')
+    ax.set_title("Evolutionary Optimized Routes Overlay", color='white', fontsize=14)
+    ax.tick_params(colors='white')
+    plt.savefig(f'{output_dir}/optimized_paths.png', dpi=150, facecolor='#111111')
 
 
 if __name__ == '__main__':
