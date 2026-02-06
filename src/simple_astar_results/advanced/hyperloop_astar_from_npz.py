@@ -27,7 +27,7 @@ FRAME_RECORD_INTERVAL = 5000
 
 # Cost multipliers for different terrain
 ON_ROAD_COST = 1.0      # Cost when on road (value = 1 in raster)
-OFF_ROAD_COST = float('inf')     # Cost when off road (value = 0 in raster)
+OFF_ROAD_COST = 5.0     # Cost when off road (possible but expensive)
 
 # Maximum nodes to expand as a safety cap
 MAX_EXPANSIONS = 5_000_000
@@ -148,15 +148,13 @@ def get_successors(pos, road_bitmap, allow_diagonal=ALLOW_DIAGONAL):
     for dx, dy in directions:
         nx, ny = pos[0] + dx, pos[1] + dy
         if 0 <= nx < h and 0 <= ny < w:
-            # Check if valid road
-            if road_bitmap[nx, ny] == 0:
-                continue
-                
             # Calculate distance (Euclidean for diagonals)
             base_distance = math.hypot(dx, dy)
             
-            # Since we skip off-road, cost is always ON_ROAD_COST
-            yield ((nx, ny), base_distance * ON_ROAD_COST)
+            # Apply terrain cost multiplier
+            terrain_cost = ON_ROAD_COST if road_bitmap[nx, ny] == 1 else OFF_ROAD_COST
+            
+            yield ((nx, ny), base_distance * terrain_cost)
 
 
 def reconstruct_path(came_from, current_state, start_state):

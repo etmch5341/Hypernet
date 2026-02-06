@@ -97,9 +97,9 @@ class HyperloopObjectives:
         
         # Terrain penalties
         if protected_bitmap[p_next[0], p_next[1]] == 1:
-            cost *= 100.0  # Heavy penalty for protected areas
+            cost *= 50.0  # Protected areas: very expensive but possible
         elif road_bitmap[p_next[0], p_next[1]] == 0:
-            return float('inf')  # Strict constraint: Must stay on road
+            cost *= 5.0  # Off-road: more expensive but allows routing anywhere
         
         return cost
 

@@ -1,0 +1,37 @@
+{
+  "test_set": "src/sample-test-set/austin_test_raster.npz",
+  "source": [
+    34,
+    829
+  ],
+  "target": [
+    510,
+    152
+  ],
+  "raster_shape": [
+    540,
+    864
+  ],
+  "algorithms": {
+    "single_objective": {
+      "algorithm": "Single-Objective A*",
+      "runtime_seconds": 0.661240816116333,
+      "nodes_expanded": 211022,
+      "solutions_found": 1,
+      "pareto_front": [
+        [
+          1048.2762620207516
+        ]
+      ],
+      "hypervolume": null
+    },
+    "emo_astar": {
+      "algorithm": "EMO+A* (Weight Sampling)",
+      "runtime_seconds": 17.38078808784485,
+      "nodes_expanded": 2500000,
+      "solutions_found": 0,
+      "pareto_front": [],
+      "hypervolume": null
+    }
+  }
+}
