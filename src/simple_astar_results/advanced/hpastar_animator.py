@@ -17,16 +17,40 @@ class HPAStarAnimator:
         self.load_data()
 
     def load_data(self):
-        road_data = np.load(os.path.join(self.output_dir, "road_bitmap.npz"))
-        self.road_bitmap = road_data['road_bitmap']
+        # Robust loading: if any file is missing/corrupt, fall back to sane defaults
+        try:
+            road_data = np.load(os.path.join(self.output_dir, "road_bitmap.npz"))
+            self.road_bitmap = road_data['road_bitmap']
+        except Exception as e:
+            print(f"Warning: failed to load road_bitmap.npz: {e}")
+            self.road_bitmap = np.zeros((1, 1), dtype=np.uint8)
 
-        protected_data = np.load(os.path.join(self.output_dir, "protected_bitmap.npz"))
-        self.protected_bitmap = protected_data['protected_bitmap']
+        try:
+            protected_data = np.load(os.path.join(self.output_dir, "protected_bitmap.npz"))
+            self.protected_bitmap = protected_data['protected_bitmap']
+        except Exception:
+            # fallback to empty protected map with same shape as road_bitmap
+            self.protected_bitmap = np.zeros_like(self.road_bitmap, dtype=np.uint8)
 
-        with open(os.path.join(self.output_dir, "astar_sparse_frames.pkl"), "rb") as f:
-            self.sparse_frames = pickle.load(f)
+        try:
+            with open(os.path.join(self.output_dir, "astar_sparse_frames.pkl"), "rb") as f:
+                self.sparse_frames = pickle.load(f) or []
+        except Exception:
+            # ensure attribute exists and is a list of (expansion_count, positions)
+            self.sparse_frames = []
 
-        self.final_path = np.load(os.path.join(self.output_dir, "astar_final_path.npy"))
+        try:
+            self.final_path = np.load(os.path.join(self.output_dir, "astar_final_path.npy"))
+            # convert to list of tuples for easier handling
+            if isinstance(self.final_path, np.ndarray):
+                if self.final_path.ndim == 2 and self.final_path.shape[1] >= 2:
+                    self.final_path = [tuple(p) for p in self.final_path.tolist()]
+                else:
+                    self.final_path = []
+            else:
+                self.final_path = list(self.final_path)
+        except Exception:
+            self.final_path = []
 
     def create_base_map(self, show_grid=True):
         """Creates the base map and overlays the hierarchical cluster grid."""
@@ -47,27 +71,64 @@ class HPAStarAnimator:
         return base_map
 
     def interpolate_frames(self, target_frames=100):
-        """Expand sparse frames into a list of accumulated visited positions per frame."""
-        if not self.sparse_frames:
-            return []
+        """Build cumulative frames from sparse frames. Always return at least one frame (final state)."""
+        # ensure sparse_frames exists
+        sparse = getattr(self, "sparse_frames", []) or []
 
-        all_visited = []
-        for _, positions in self.sparse_frames:
-            all_visited.extend(positions)
+        # Build cumulative visited lists from the sparse snapshots (each snapshot is incremental)
+        cumulative = []
+        cum_set = []
+        for _, positions in sparse:
+            if positions:
+                for p in positions:
+                    cum_set.append(tuple(p))
+            # append snapshot of cumulative state even if no new positions
+            cumulative.append(list(cum_set))
 
-        total = len(all_visited)
-        if total == 0:
-            return []
+        # If we have no sparse snapshots, fall back to final path (if any) or a single empty frame
+        if not cumulative:
+            if getattr(self, "final_path", None):
+                # show final path as single frame
+                return [list(self.final_path)]
+            return [[]]
 
-        indices = np.linspace(0, total - 1, min(target_frames, total), dtype=int)
-        return [all_visited[:idx + 1] for idx in indices]
+        # remove duplicate trailing identical frames to avoid useless frames
+        dedup = []
+        last = None
+        for frame in cumulative:
+            key = tuple(frame)
+            if key != last:
+                dedup.append(frame)
+                last = key
+
+        if len(dedup) == 0:
+            if getattr(self, "final_path", None):
+                return [list(self.final_path)]
+            return [[]]
+
+        # If we already have fewer frames than target, return them directly
+        if len(dedup) <= target_frames:
+            return dedup
+
+        # Otherwise sample evenly to reach target_frames
+        idxs = np.linspace(0, len(dedup) - 1, target_frames, dtype=int)
+        return [dedup[i] for i in idxs]
 
     def create_animation(self, output_file="hpa_animation.gif", fps=15, target_frames=150, show_path=True,
                          figsize=(12, 10), dpi=100):
+        """
+        Create the animation. The final refined path is overlaid on every frame
+        so it is visible for the entire animation.
+        """
+        print("HPAStarAnimator: starting animation creation...")
         frames = self.interpolate_frames(target_frames)
+
+        # Ensure frames is non-empty (fallback to single empty/frame-with-path)
         if not frames:
-            print("No frames to animate.")
-            return
+            if getattr(self, "final_path", None):
+                frames = [list(self.final_path)]
+            else:
+                frames = [[]]
 
         base_map = self.create_base_map(show_grid=True)
         h, w = base_map.shape
@@ -82,6 +143,17 @@ class HPAStarAnimator:
         ax.set_title("Hierarchical A* Search Progression", fontsize=14, fontweight='bold')
         ax.axis('off')
 
+        # Precompute final path coordinates (ensure tuples and filtered to bounds)
+        final_path_coords = []
+        if getattr(self, "final_path", None):
+            for p in self.final_path:
+                try:
+                    r, c = int(p[0]), int(p[1])
+                except Exception:
+                    continue
+                if 0 <= r < h and 0 <= c < w:
+                    final_path_coords.append((r, c))
+
         # Add legend patches if desired
         from matplotlib.patches import Patch
         legend_elements = [
@@ -95,30 +167,47 @@ class HPAStarAnimator:
         ax.legend(handles=legend_elements, loc='upper right', fontsize=9)
 
         def update(frame_idx):
+            # Start from base map copy every frame
             display_map = base_map.copy()
-            visited_positions = frames[frame_idx]
-            # Mark visited nodes; for abstract gateway nodes we draw a small 3x3 block to be visible
-            for pos in visited_positions:
-                r, c = pos
-                if 0 <= r < h and 0 <= c < w:
-                    display_map[max(0, r-1):min(h, r+2), max(0, c-1):min(w, c+2)] = 3
 
-            if show_path and self.final_path is not None and len(self.final_path) > 0:
-                for pos in self.final_path:
-                    r, c = pos
-                    if 0 <= r < h and 0 <= c < w:
-                        display_map[r, c] = 4
+            visited_positions = frames[frame_idx] or []
+            # Normalize visited positions
+            if isinstance(visited_positions, np.ndarray):
+                if visited_positions.ndim == 2 and visited_positions.shape[1] >= 2:
+                    visited_iter = (tuple(p) for p in visited_positions)
+                else:
+                    visited_iter = ()
+            else:
+                visited_iter = (tuple(p) for p in visited_positions)
+
+            # Draw visited (red) as small blocks so gateways are visible
+            for r, c in visited_iter:
+                rr, cc = int(r), int(c)
+                if 0 <= rr < h and 0 <= cc < w:
+                    display_map[max(0, rr-1):min(h, rr+2), max(0, cc-1):min(w, cc+2)] = 3
+
+            # ALWAYS overlay the final refined path last so it remains visible on top
+            if final_path_coords and show_path:
+                for r, c in final_path_coords:
+                    display_map[r, c] = 4
 
             im.set_array(display_map)
-            ax.set_xlabel(f"Frame {frame_idx + 1}/{len(frames)}  —  Cells visited: {len(visited_positions):,}", fontsize=10)
+            ax.set_xlabel(f"Frame {frame_idx + 1}/{len(frames)}", fontsize=10)
             return [im]
 
         anim = FuncAnimation(fig, update, frames=len(frames), interval=1000.0 / fps, blit=True, repeat=True)
         out_path = os.path.join(self.output_dir, output_file)
-        writer = PillowWriter(fps=fps)
-        anim.save(out_path, writer=writer)
-        plt.close(fig)
-        print(f"Animation saved to: {out_path}")
+        try:
+            writer = PillowWriter(fps=fps)
+            anim.save(out_path, writer=writer)
+            print(f"Animation saved to: {out_path}")
+        except Exception as e:
+            # fallback: save a static PNG if GIF saving fails
+            print(f"Animation save failed: {e}. Saving single-frame PNG instead.")
+            single = update(0)[0].get_array()
+            plt.imsave(out_path.replace(".gif", ".png"), single, cmap=cmap)
+        finally:
+            plt.close(fig)
 
     def create_static_comparison(self, output_file="hpa_comparison.png", figsize=(18, 6), dpi=150):
         base_map = self.create_base_map(show_grid=True)
