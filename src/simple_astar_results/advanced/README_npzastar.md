@@ -4,7 +4,7 @@ This system runs multi-goal A* pathfinding directly from NPZ raster files and ge
 
 ## Files
 
-- **`astar_from_npz.py`** - Main script that loads NPZ files, runs A*, and generates animations
+- **`hyperloop_astar_from_npz.py`** - Main script that loads NPZ files, runs A*, and generates animations
 - **`run_all_tests.py`** - Batch script to process all test sets (Austin, Seattle, Portland)
 - **`astar_animator.py`** - Animation generation module (unchanged)
 - **`generate_animations.py`** - CLI tool to regenerate animations from existing output
@@ -15,13 +15,13 @@ This system runs multi-goal A* pathfinding directly from NPZ raster files and ge
 
 ```bash
 # Austin test
-python astar_from_npz.py --input ./src/sample-test-set/austin_test_raster.npz
+python hyperloop_astar_from_npz.py --input ./src/sample-test-set/austin_test_raster.npz
 
 # Seattle test
-python astar_from_npz.py --input ./src/sample-test-set/seattle_test_raster.npz
+python hyperloop_astar_from_npz.py --input ./src/sample-test-set/seattle_test_raster.npz
 
 # Portland test
-python astar_from_npz.py --input ./src/sample-test-set/portland_test_raster.npz
+python hyperloop_astar_from_npz.py --input ./src/sample-test-set/portland_test_raster.npz
 ```
 
 ### Run All Test Sets
