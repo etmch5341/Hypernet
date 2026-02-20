@@ -1,92 +1,108 @@
-# Pure A*pex Multi-Objective Search Implementation
+# Pure A*pex Multi-Objective Search
 
-**Date**: February 6, 2026  
+**Date**: February 2026  
 **Author**: Pranav Krishnan
 
 ---
 
 ## Summary
 
-Implemented **pure multi-objective A*pex algorithm** for hyperloop route optimization with 3 objectives:
-1. **Distance** - Euclidean path length
-2. **Turns** - Number of direction changes  
-3. **Elevation** - Cumulative elevation change
+**Pure multi-objective A*pex algorithm** for hyperloop route optimization with 3 objectives:
+1. **Distance** — Weighted path length (on-road vs off-road)
+2. **Elevation** — Cumulative absolute elevation change
+3. **Slope** — Cumulative terrain gradient
 
-This is a true multi-objective search (not weighted scalarization) that finds the **Pareto-optimal frontier** of routes.
+This is a true multi-objective search (not weighted scalarization) that finds the **Pareto-optimal frontier** of routes using ε-dominance. See [APEX_FEATURES.md](APEX_FEATURES.md) for detailed objective calculations.
 
 ---
 
-## New Files
+## Quick Start
+
+### Run A*pex on all test cities (Seattle, Austin, Portland)
+```bash
+cd /Users/pranavkrishnan/Development/Hypernet
+
+# Full run: search + static visualizations + animated GIFs
+python3 src/run_apex_all.py
+
+# Search + visualizations only (faster, no GIF)
+python3 src/run_apex_all.py --no-animation
+
+# Run specific cities
+python3 src/run_apex_all.py --cities seattle austin
+```
+
+Output goes to `src/sample-test-set/apex_results/{city}/`.
+
+### Run on a single raster
+```bash
+python3 src/apex_pure.py \
+  --input src/sample-test-set/austin_test_raster.npz \
+  --output src/apex_results/austin \
+  --eps 0.1 0.1 0.1 \
+  --max-expansions 5000000
+```
+
+### Generate visualizations from existing results
+```bash
+python3 src/apex_visualizer.py \
+  --results src/sample-test-set/apex_results/austin/apex_results.json \
+  --raster src/sample-test-set/austin_test_raster.npz \
+  --output src/sample-test-set/apex_results/austin
+```
+
+### Generate animated search GIF only
+```bash
+python3 src/apex_animate.py \
+  --input src/sample-test-set/seattle_test_raster.npz \
+  --output src/sample-test-set/apex_results/seattle/apex_animation.gif \
+  --eps 0.1 \
+  --frame-interval 5000 \
+  --fps 4
+```
+
+---
+
+## Files
 
 | File | Description |
 |------|-------------|
 | [apex_pure.py](file:///Users/pranavkrishnan/Development/Hypernet/src/apex_pure.py) | Core A*pex algorithm with ε-dominance |
 | [apex_visualizer.py](file:///Users/pranavkrishnan/Development/Hypernet/src/apex_visualizer.py) | Pareto plots, route overlays, progress charts |
-| [apex_comparison.py](file:///Users/pranavkrishnan/Development/Hypernet/src/apex_comparison.py) | Comparison framework: A*pex vs EMO+A* |
+| [apex_animate.py](file:///Users/pranavkrishnan/Development/Hypernet/src/apex_animate.py) | Animated GIF of search wavefront |
+| [run_apex_all.py](file:///Users/pranavkrishnan/Development/Hypernet/src/run_apex_all.py) | Batch runner for all test cities |
+| [apex_comparison.py](file:///Users/pranavkrishnan/Development/Hypernet/src/apex_comparison.py) | A*pex vs EMO+A* comparison framework |
+| [APEX_FEATURES.md](file:///Users/pranavkrishnan/Development/Hypernet/docs/APEX_FEATURES.md) | How each objective is calculated |
 
 ---
 
-## How to Run
+## Output Structure
 
-### 1. Pure A*pex Search
-```bash
-cd /Users/pranavkrishnan/Development/Hypernet
-
-python3 src/apex_pure.py \
-  --input src/sample-test-set/austin_test_raster.npz \
-  --output src/apex_results/austin \
-  --eps 0.2 0.2 0.2 \
-  --max-expansions 2000000
+Each city produces:
 ```
-
-### 2. Generate Visualizations
-```bash
-python3 src/apex_visualizer.py \
-  --results src/apex_results/austin/apex_results.json \
-  --raster src/sample-test-set/austin_test_raster.npz \
-  --output src/apex_results/austin
-```
-
-### 3. Algorithm Comparison
-```bash
-python3 src/apex_comparison.py \
-  --input src/sample-test-set/austin_test_raster.npz \
-  --output src/apex_results/comparison
+src/sample-test-set/apex_results/
+├── seattle/
+│   ├── apex_results.json      # Full results + paths
+│   ├── routes_overlay.png     # Pareto routes on raster
+│   ├── pareto_3d.png          # 3D Pareto front scatter
+│   ├── pareto_2d.png          # 2D objective projections
+│   ├── search_progress.png    # Expansion/queue/solutions over time
+│   └── apex_animation.gif     # Animated search wavefront
+├── austin/
+│   └── ...
+└── portland/
+    └── ...
 ```
 
 ---
 
-## Results (Austin Test Set)
+## Results (eps=0.1)
 
-### Pareto-Optimal Solutions Found
-
-| Route | Distance | Turns | Elevation |
-|-------|----------|-------|-----------|
-| 1 | 1,064 | 571 | 11,275 |
-| 2 | 1,369 | 475 | 11,871 |
-
-**Trade-off**: Route 2 is 29% longer but has 17% fewer turns.
-
-### Performance Comparison
-
-| Algorithm | Runtime | Expansions | Solutions |
-|-----------|---------|------------|-----------|
-| Single-Objective A* | 0.7s | 211k | 1 |
-| Pure A*pex (ε=0.2) | 70s | 2M | 2 |
-| EMO+A* | 17s | 2.5M | 0* |
-
-*EMO+A* hit expansion limit without finding solutions due to turn/elevation cost inflation
-
----
-
-## Output Files
-
-Generated in `src/apex_results/austin/`:
-- `routes_overlay.png` - Both routes on road network
-- `pareto_2d.png` - 2D projections of Pareto front
-- `pareto_3d.png` - 3D Pareto front visualization
-- `search_progress.png` - Expansion progress over time
-- `apex_results.json` - Full results with paths
+| City | Grid Size | ε | Solutions | Expansions | Runtime |
+|------|-----------|---|-----------|------------|---------|
+| Seattle | 102×142 | 0.1 | **8** | 170K | 7s |
+| Austin | 540×864 | 0.1 | **6** | 5M | 203s |
+| Portland | 1014×707 | 0.1 | **2** | 5M | 230s |
 
 ---
 
@@ -94,14 +110,16 @@ Generated in `src/apex_results/austin/`:
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `--eps` | 0.01 0.01 0.01 | ε-dominance tolerance (higher = more pruning) |
-| `--max-expansions` | 500,000 | Safety limit on node expansions |
+| `--eps` | 0.1 | ε-dominance tolerance per objective. Lower = more solutions but exponentially slower |
+| `--max-expansions` | 500K–5M | Safety limit on node expansions. Larger grids need more |
+| `--frame-interval` | 5K–50K | Animation: capture a frame every N expansions |
+| `--fps` | 4 | Animation: frames per second in output GIF |
 
-> **Recommendation**: Use `--eps 0.2 0.2 0.2` for large grids (~500×800 pixels) to make search tractable.
+> **Tuning ε**: Use 0.1 as a baseline. At 0.01, queue size explodes (100K+ items) and search struggles to converge on grids larger than ~100×100.
 
 ---
 
-## Architecture Difference: A*pex vs EMO+A*
+## Architecture: A*pex vs EMO+A*
 
 | Aspect | Pure A*pex | EMO+A* |
 |--------|------------|--------|
@@ -110,3 +128,5 @@ Generated in `src/apex_results/austin/`:
 | Guarantees | ε-Pareto optimal | Convex hull only |
 | Speed | Slower | Faster |
 | Use case | Theoretical completeness | Practical large grids |
+
+See [APEX_EMO_WALKTHROUGH.md](APEX_EMO_WALKTHROUGH.md) for EMO details.
