@@ -12,3 +12,4 @@ myenv/
 *.npz
 *.gif
 *.png
+.DS_Store

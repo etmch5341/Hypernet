@@ -5,7 +5,7 @@ Contained in the `road_test_set.py` file you will find that the 3 test samples a
 ![image](./images/austin_geojson.png)
 
 ## Seattle
-![image](./images/austin_geojson.png)
+![image](./images/seattle_geojson.png)
 
 ## Portland
 ![image](./images/portland_geojson.png)
