@@ -232,3 +232,39 @@ Expansions       : 0
 Frames recorded  : 0
 Total visited    : 0
 
+============================================================
+Timestamp        : 2026-02-20 23:28:45
+Input file       : /workspace/src/sample-test-set/austin_test_raster.npz
+Output directory : /workspace/src/hpa_output_austin_test_raster
+Cluster size     : 10
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3294 MB
+CPU cores        : 4
+RAM-safe workers : 1850
+Worker processes : 4
+Goal points      : 2
+Status           : no path
+Path length      : N/A nodes
+Search time      : 4.428s
+Expansions       : 19
+Frames recorded  : 1
+Total visited    : 165
+
+============================================================
+Timestamp        : 2026-02-20 23:28:56
+Input file       : /workspace/src/sample-test-set/austin_test_raster.npz
+Output directory : /workspace/src/hpa_output_austin_test_raster
+Cluster size     : 28
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3275 MB
+CPU cores        : 4
+RAM-safe workers : 1839
+Worker processes : 4
+Goal points      : 2
+Status           : path found
+Path length      : 1926 nodes
+Search time      : 4.475s
+Expansions       : 1607
+Frames recorded  : 17
+Total visited    : 8820
+
