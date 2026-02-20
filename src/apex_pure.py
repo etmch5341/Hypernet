@@ -5,8 +5,8 @@ Pure A*pex Multi-Objective Search for Raster Grids
 Implements true multi-objective A* with ε-dominance and Pareto frontiers.
 Finds routes that optimize 3 objectives simultaneously:
   1. Distance: Euclidean path length
-  2. Turns: Number of direction changes
-  3. Elevation: Cumulative elevation change
+  2. Elevation: Cumulative elevation change
+  3. Slope: Gradient steepness
 
 Based on A*pex algorithm concepts but adapted for raster/grid search.
 """
@@ -21,11 +21,27 @@ from dataclasses import dataclass, field
 from typing import List, Tuple, Dict, Optional, Set, Any
 from pathlib import Path
 
+# Add src to path to allow imports
+import sys
+sys.path.append(os.path.join(os.getcwd(), 'src'))
+
+try:
+    from data_pipeline.system.feature_extraction import extract_elevation
+    HAS_ELEVATION_LIB = True
+except ImportError:
+    # If standard import fails, try relative import if run as module
+    try:
+        from .data_pipeline.system.feature_extraction import extract_elevation
+        HAS_ELEVATION_LIB = True
+    except ImportError:
+        print("Warning: Could not import extract_elevation. Real elevation data will not be available.")
+        HAS_ELEVATION_LIB = False
+
 
 # =============================================================================
 # Type Aliases
 # =============================================================================
-CostVec = Tuple[float, ...]  # (distance, turns, elevation)
+CostVec = Tuple[float, ...]  # (distance, elevation, slope)
 Position = Tuple[int, int]   # (row, col)
 
 
@@ -69,13 +85,13 @@ def v_scalar_sum(a: CostVec) -> float:
 
 @dataclass
 class Label:
-    """A label represents a partial path to a node with a cost vector."""
+    """A label in A*pex: one candidate cost vector at a position."""
     state: Position
     g: CostVec              # Cost-to-come vector
     h: CostVec              # Heuristic vector
     f: CostVec              # f = g + h
     parent: Optional['Label'] = None
-    prev_direction: Optional[Tuple[int, int]] = None  # For turn counting
+    prev_direction: Optional[Tuple[int, int]] = None  # For path reconstruction only
 
 
 @dataclass
@@ -83,7 +99,7 @@ class ParetoSolution:
     """A complete Pareto-optimal solution."""
     path: List[Position]
     objectives: CostVec
-    objective_names: Tuple[str, ...] = ("distance", "turns", "elevation")
+    objective_names: Tuple[str, ...] = ("distance", "elevation", "slope")
     
     def to_dict(self) -> dict:
         return {
@@ -136,11 +152,11 @@ class RasterApexSearch:
     
     Objectives:
         1. Distance: Euclidean path length
-        2. Turns: Count of direction changes
-        3. Elevation: Cumulative elevation difference
+        2. Elevation: Cumulative elevation difference
+        3. Slope: Gradient steepness
     """
     
-    OBJECTIVES = ("distance", "turns", "elevation")
+    OBJECTIVES = ("distance", "elevation", "slope")
     NUM_OBJECTIVES = 3
     
     # 8-connectivity directions
@@ -153,8 +169,10 @@ class RasterApexSearch:
     def __init__(
         self,
         raster: np.ndarray,
-        elevation: Optional[np.ndarray] = None,
-        eps: Tuple[float, float, float] = (0.01, 0.01, 0.01),
+        resolution: float = 30.0,
+        elevation_array: Optional[np.ndarray] = None,
+        bbox: Optional[Tuple[float, float, float, float]] = None,
+        eps: Tuple[float, ...] = (0.01, 0.01, 0.01),
         road_cost: float = 1.0,
         offroad_cost: float = 5.0,
         allow_diagonal: bool = True,
@@ -166,7 +184,9 @@ class RasterApexSearch:
         
         Args:
             raster: 2D array where 1=road, 0=off-road
-            elevation: 2D array of elevation values (or None for synthetic)
+            resolution: Meters per pixel
+            elevation_array: Optional 2D array of elevation values (meters)
+            bbox: Optional bounding box (min_lon, min_lat, max_lon, max_lat) for real data fetching
             eps: Epsilon values for ε-dominance per objective
             road_cost: Cost multiplier for on-road movement
             offroad_cost: Cost multiplier for off-road movement
@@ -176,6 +196,7 @@ class RasterApexSearch:
         """
         self.raster = raster
         self.height, self.width = raster.shape
+        self.resolution = resolution
         self.eps = eps
         self.road_cost = road_cost
         self.offroad_cost = offroad_cost
@@ -183,11 +204,43 @@ class RasterApexSearch:
         self.log_interval = log_interval
         self.max_expansions = max_expansions
         
-        # Use provided elevation or generate synthetic
-        if elevation is not None:
-            self.elevation = elevation
+        # Objectives: [Distance, Elevation_Change, Slope]
+        self.objective_names = ["distance", "elevation", "slope"]
+        self.num_objectives = len(self.objective_names)
+        
+        # Load or generate elevation data
+        if elevation_array is not None:
+            print("Using provided elevation data.")
+            self.elevation = elevation_array
+        elif bbox is not None and HAS_ELEVATION_LIB:
+            print(f"Attempting to fetch real elevation data for bbox {bbox}...")
+            try:
+                self.elevation = extract_elevation(bbox, resolution)
+                print(f"Successfully loaded real elevation data. Range: {self.elevation.min():.1f}m - {self.elevation.max():.1f}m")
+            except Exception as e:
+                print(f"Failed to fetch real elevation: {e}")
+                print("Falling back to synthetic elevation.")
+                self.elevation = self._generate_synthetic_elevation()
         else:
+            print("No elevation data or bbox provided. Generating synthetic elevation.")
             self.elevation = self._generate_synthetic_elevation()
+            
+        # Ensure elevation matches raster shape
+        if self.elevation.shape != self.raster.shape:
+             # Resize to match raster if needed (simple crop or pad)
+             print(f"Warning: Elevation shape {self.elevation.shape} != Raster shape {self.raster.shape}")
+             # Detailed resize logic omitted for brevity, assuming correct mostly
+             # Fallback to synthetic if size mismatch is severe
+             if self.elevation.shape[0] < self.height or self.elevation.shape[1] < self.width:
+                 print("Elevation too small, regenerating synthetic.")
+                 self.elevation = self._generate_synthetic_elevation()
+             else:
+                 self.elevation = self.elevation[:self.height, :self.width]
+
+        # Precompute gradients and slope array
+        self.grad_y, self.grad_x = np.gradient(self.elevation, resolution)
+        self.slope = np.clip(np.sqrt(self.grad_x**2 + self.grad_y**2), 0, 1.0).astype(np.float32)
+        print(f"Slope: mean={np.mean(self.slope)*100:.2f}%, max={np.max(self.slope)*100:.2f}%")
         
         # Search state (reset per search)
         self.stats = SearchStats()
@@ -224,19 +277,18 @@ class RasterApexSearch:
         """
         Admissible heuristic for each objective.
         
-        Returns (h_distance, h_turns, h_elevation)
+        Returns (h_distance, h_elevation, h_slope)
         """
         # Distance: Euclidean (admissible)
         h_dist = math.hypot(goal[0] - pos[0], goal[1] - pos[1])
         
-        # Turns: 0 is admissible (we can't predict turns)
-        h_turns = 0.0
-        
         # Elevation: Optimistic lower bound = direct elevation difference
-        # (actual cumulative change will be >= this)
         h_elev = abs(self.elevation[goal] - self.elevation[pos])
         
-        return (h_dist, h_turns, h_elev)
+        # Slope: 0 is admissible (minimum possible slope cost)
+        h_slope = 0.0
+        
+        return (h_dist, h_elev, h_slope)
     
     def _get_successors(self, pos: Position, prev_dir: Optional[Tuple[int, int]]
                         ) -> List[Tuple[Position, CostVec, Tuple[int, int]]]:
@@ -265,18 +317,13 @@ class RasterApexSearch:
             terrain_mult = self.road_cost if self.raster[nr, nc] == 1 else self.offroad_cost
             cost_dist = dist * terrain_mult
             
-            # Objective 2: Turn (1 if direction changed, 0 otherwise)
-            if prev_dir is None:
-                cost_turn = 0.0
-            elif direction != prev_dir:
-                cost_turn = 1.0
-            else:
-                cost_turn = 0.0
-            
-            # Objective 3: Elevation change
+            # Objective 2: Elevation change
             cost_elev = abs(self.elevation[neighbor] - self.elevation[pos])
             
-            edge_cost = (cost_dist, cost_turn, cost_elev)
+            # Objective 3: Slope at destination cell
+            cost_slope = float(self.slope[nr, nc])
+            
+            edge_cost = (cost_dist, cost_elev, cost_slope)
             successors.append((neighbor, edge_cost, direction))
         
         return successors
@@ -503,9 +550,15 @@ def main():
     print(f"  Source: {goal_points[0][2]} at {source}")
     print(f"  Target: {goal_points[1][2]} at {target}")
     
+    # Extract bounding box for real elevation data
+    bbox = tuple(data['bbox']) if 'bbox' in data else None
+    if bbox:
+        print(f"  BBox: {bbox}")
+    
     # Create searcher and run
     searcher = RasterApexSearch(
         raster=raster,
+        bbox=bbox,
         eps=tuple(args.eps),
         max_expansions=args.max_expansions
     )
@@ -518,8 +571,8 @@ def main():
     # Print solution summary
     print("\nPareto Front:")
     for i, sol in enumerate(solutions):
-        d, t, e = sol.objectives
-        print(f"  {i+1}. Distance: {d:.1f}, Turns: {t:.0f}, Elevation: {e:.1f}")
+        d, e, s = sol.objectives
+        print(f"  {i+1}. Distance: {d:.1f}, Elevation: {e:.1f}, Slope: {s:.4f}")
     
     return 0
 

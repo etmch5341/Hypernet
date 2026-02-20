@@ -1,0 +1,22 @@
+{
+  "algorithm": "A*pex Pure Multi-Objective",
+  "objectives": [
+    "distance",
+    "turns",
+    "elevation"
+  ],
+  "epsilon": [
+    0.5,
+    0.5,
+    0.5
+  ],
+  "statistics": {
+    "nodes_expanded": 1000,
+    "labels_generated": 1864,
+    "labels_pruned": 6129,
+    "pareto_size": 0,
+    "runtime_seconds": 0.01595306396484375,
+    "iterations": []
+  },
+  "solutions": []
+}
