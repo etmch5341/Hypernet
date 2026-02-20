@@ -1,0 +1,126 @@
+============================================================
+Timestamp        : 2026-02-20 22:30:37
+Input file       : /workspace/src/sample-test-set/austin_test_raster.npz
+Output directory : /workspace/src/hpa_output_austin_test_raster
+Cluster size     : 15
+Raster shape     : 540 rows x 864 cols
+Goal points      : 2
+Path found       : no
+Path length      : N/A nodes
+Search time      : 3.514s
+Expansions       : 2476
+Frames recorded  : 25
+Total visited    : 14981
+
+============================================================
+Timestamp        : 2026-02-20 22:31:40
+Input file       : /workspace/src/sample-test-set/austin_test_raster.npz
+Output directory : /workspace/src/hpa_output_austin_test_raster
+Cluster size     : 25
+Raster shape     : 540 rows x 864 cols
+Goal points      : 2
+Path found       : no
+Path length      : N/A nodes
+Search time      : 7.350s
+Expansions       : 2023
+Frames recorded  : 21
+Total visited    : 2388
+
+============================================================
+Timestamp        : 2026-02-20 22:33:40
+Input file       : /workspace/src/sample-test-set/austin_test_raster.npz
+Output directory : /workspace/src/hpa_output_austin_test_raster
+Cluster size     : 35
+Raster shape     : 540 rows x 864 cols
+Goal points      : 2
+Path found       : yes
+Path length      : 1654 nodes
+Search time      : 20.842s
+Expansions       : 1306
+Frames recorded  : 14
+Total visited    : 11566
+
+============================================================
+Timestamp        : 2026-02-20 22:34:08
+Input file       : /workspace/src/sample-test-set/austin_test_raster.npz
+Output directory : /workspace/src/hpa_output_austin_test_raster
+Cluster size     : 26
+Raster shape     : 540 rows x 864 cols
+Goal points      : 2
+Path found       : no
+Path length      : N/A nodes
+Search time      : 9.534s
+Expansions       : 1770
+Frames recorded  : 18
+Total visited    : 2184
+
+============================================================
+Timestamp        : 2026-02-20 22:34:41
+Input file       : /workspace/src/sample-test-set/austin_test_raster.npz
+Output directory : /workspace/src/hpa_output_austin_test_raster
+Cluster size     : 27
+Raster shape     : 540 rows x 864 cols
+Goal points      : 2
+Path found       : no
+Path length      : N/A nodes
+Search time      : 7.832s
+Expansions       : 1780
+Frames recorded  : 18
+Total visited    : 2283
+
+============================================================
+Timestamp        : 2026-02-20 22:35:23
+Input file       : /workspace/src/sample-test-set/austin_test_raster.npz
+Output directory : /workspace/src/hpa_output_austin_test_raster
+Cluster size     : 28
+Raster shape     : 540 rows x 864 cols
+Goal points      : 2
+Path found       : yes
+Path length      : 1926 nodes
+Search time      : 9.466s
+Expansions       : 1607
+Frames recorded  : 17
+Total visited    : 8820
+
+============================================================
+Timestamp        : 2026-02-20 22:37:49
+Input file       : /workspace/src/sample-test-set/austin_test_raster.npz
+Output directory : /workspace/src/hpa_output_austin_test_raster
+Cluster size     : 80
+Raster shape     : 540 rows x 864 cols
+Goal points      : 2
+Path found       : yes
+Path length      : 2351 nodes
+Search time      : 113.401s
+Expansions       : 610
+Frames recorded  : 7
+Total visited    : 45157
+
+============================================================
+Timestamp        : 2026-02-20 22:40:17
+Input file       : /workspace/src/sample-test-set/austin_test_raster.npz
+Output directory : /workspace/src/hpa_output_austin_test_raster
+Cluster size     : 90
+Raster shape     : 540 rows x 864 cols
+Goal points      : 2
+Path found       : yes
+Path length      : 2364 nodes
+Search time      : 122.942s
+Expansions       : 493
+Frames recorded  : 5
+Total visited    : 40941
+
+============================================================
+Timestamp        : 2026-02-20 22:42:23
+Input file       : /workspace/src/sample-test-set/austin_test_raster.npz
+Output directory : /workspace/src/hpa_output_austin_test_raster
+Cluster size     : 100
+Raster shape     : 540 rows x 864 cols
+Goal points      : 2
+Path found       : yes
+Path length      : 2405 nodes
+Search time      : 102.427s
+Expansions       : 373
+Frames recorded  : 4
+Total visited    : 62941
+
