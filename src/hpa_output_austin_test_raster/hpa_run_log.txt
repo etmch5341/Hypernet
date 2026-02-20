@@ -124,3 +124,111 @@ Expansions       : 373
 Frames recorded  : 4
 Total visited    : 62941
 
+============================================================
+Timestamp        : 2026-02-20 22:48:03
+Input file       : /workspace/src/sample-test-set/austin_test_raster.npz
+Output directory : /workspace/src/hpa_output_austin_test_raster
+Cluster size     : 40
+Worker processes : 4
+Raster shape     : 540 rows x 864 cols
+Goal points      : 2
+Status           : path found
+Path length      : 2275 nodes
+Search time      : 15.256s
+Expansions       : 1328
+Frames recorded  : 14
+Total visited    : 17340
+
+============================================================
+Timestamp        : 2026-02-20 22:48:49
+Input file       : /workspace/src/sample-test-set/austin_test_raster.npz
+Output directory : /workspace/src/hpa_output_austin_test_raster
+Cluster size     : 20
+Worker processes : 4
+Raster shape     : 540 rows x 864 cols
+Goal points      : 2
+Status           : no path
+Path length      : N/A nodes
+Search time      : 5.681s
+Expansions       : 2468
+Frames recorded  : 25
+Total visited    : 15556
+
+============================================================
+Timestamp        : 2026-02-20 22:50:35
+Input file       : /workspace/src/sample-test-set/austin_test_raster.npz
+Output directory : /workspace/src/hpa_output_austin_test_raster
+Cluster size     : 100
+Worker processes : 4
+Raster shape     : 540 rows x 864 cols
+Goal points      : 2
+Status           : path found
+Path length      : 2405 nodes
+Search time      : 66.039s
+Expansions       : 373
+Frames recorded  : 4
+Total visited    : 62941
+
+============================================================
+Timestamp        : 2026-02-20 22:56:42
+Input file       : /workspace/src/sample-test-set/austin_test_raster.npz
+Output directory : /workspace/src/hpa_output_austin_test_raster
+Cluster size     : 200
+Worker processes : 4
+Raster shape     : 540 rows x 864 cols
+Goal points      : 2
+Status           : path found
+Path length      : 2086 nodes
+Search time      : 191.402s
+Expansions       : 184
+Frames recorded  : 2
+Total visited    : 143603
+
+============================================================
+Timestamp        : 2026-02-20 23:07:41
+Input file       : /workspace/src/sample-test-set/austin_test_raster.npz
+Output directory : /workspace/src/hpa_output_austin_test_raster
+Cluster size     : 400
+Worker processes : 4
+Raster shape     : 540 rows x 864 cols
+Goal points      : 2
+Status           : no path
+Path length      : N/A nodes
+Search time      : 0.000s
+Expansions       : 0
+Frames recorded  : 0
+Total visited    : 0
+
+============================================================
+Timestamp        : 2026-02-20 23:17:57
+Input file       : /workspace/src/sample-test-set/austin_test_raster.npz
+Output directory : /workspace/src/hpa_output_austin_test_raster
+Cluster size     : 400
+Worker processes : 4
+Raster shape     : 540 rows x 864 cols
+Goal points      : 2
+Status           : no path
+Path length      : N/A nodes
+Search time      : 0.000s
+Expansions       : 0
+Frames recorded  : 0
+Total visited    : 0
+
+============================================================
+Timestamp        : 2026-02-20 23:28:20
+Input file       : /workspace/src/sample-test-set/austin_test_raster.npz
+Output directory : /workspace/src/hpa_output_austin_test_raster
+Cluster size     : 400
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3301 MB
+CPU cores        : 4
+RAM-safe workers : 1854
+Worker processes : 4
+Goal points      : 2
+Status           : no path
+Path length      : N/A nodes
+Search time      : 0.000s
+Expansions       : 0
+Frames recorded  : 0
+Total visited    : 0
+
