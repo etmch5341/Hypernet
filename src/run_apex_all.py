@@ -47,19 +47,19 @@ from apex_animate import AnimatedApexSearch
 CITY_CONFIGS = {
     'seattle': {
         'npz': 'src/sample-test-set/seattle_test_raster.npz',
-        'eps': (0.1, 0.1, 0.1),
+        'eps': (0.1, 0.1, 0.1, 0.1),   # Small grid: tight eps works fine
         'max_expansions': 500_000,
         'frame_interval': 5000,
     },
     'austin': {
         'npz': 'src/sample-test-set/austin_test_raster.npz',
-        'eps': (0.1, 0.1, 0.1),
+        'eps': (0.1, 0.1, 0.1, 0.3),   # Looser turn eps so 4th obj doesn't strangle diversity
         'max_expansions': 5_000_000,
         'frame_interval': 50000,
     },
     'portland': {
         'npz': 'src/sample-test-set/portland_test_raster.npz',
-        'eps': (0.1, 0.1, 0.1),
+        'eps': (0.1, 0.1, 0.1, 0.5),   # Very large grid needs loosest turn eps
         'max_expansions': 5_000_000,
         'frame_interval': 50000,
     },
@@ -112,8 +112,8 @@ def run_city(city: str, config: dict, output_base: str, animate: bool = True):
     # Print summary
     print(f"\n  Pareto Front ({len(solutions)} solutions):")
     for i, sol in enumerate(solutions):
-        d, e, s = sol.objectives
-        print(f"    {i+1}. Distance={d:.1f}  Elevation={e:.1f}  Slope={s:.4f}")
+        d, e, s, t = sol.objectives
+        print(f"    {i+1}. Distance={d:.1f}  Elevation={e:.1f}  Slope={s:.4f}  Turn={t:.4f}")
     
     # =========================================================================
     # 2. Generate Static Visualizations

@@ -26,22 +26,29 @@ import sys
 sys.path.append(os.path.join(os.getcwd(), 'src'))
 
 try:
-    from data_pipeline.system.feature_extraction import extract_elevation
+    from srtm_elevation import fetch_elevation as _fetch_srtm_elevation
     HAS_ELEVATION_LIB = True
+    _ELEVATION_SOURCE = 'srtm'
 except ImportError:
-    # If standard import fails, try relative import if run as module
     try:
-        from .data_pipeline.system.feature_extraction import extract_elevation
+        from data_pipeline.system.feature_extraction import extract_elevation
         HAS_ELEVATION_LIB = True
+        _ELEVATION_SOURCE = 'pipeline'
     except ImportError:
-        print("Warning: Could not import extract_elevation. Real elevation data will not be available.")
-        HAS_ELEVATION_LIB = False
+        try:
+            from .data_pipeline.system.feature_extraction import extract_elevation
+            HAS_ELEVATION_LIB = True
+            _ELEVATION_SOURCE = 'pipeline'
+        except ImportError:
+            print("Warning: Could not import elevation tools. Real elevation data will not be available.")
+            HAS_ELEVATION_LIB = False
+            _ELEVATION_SOURCE = None
 
 
 # =============================================================================
 # Type Aliases
 # =============================================================================
-CostVec = Tuple[float, ...]  # (distance, elevation, slope)
+CostVec = Tuple[float, ...]  # (distance, elevation, slope, turn_angle)
 Position = Tuple[int, int]   # (row, col)
 
 
@@ -99,7 +106,7 @@ class ParetoSolution:
     """A complete Pareto-optimal solution."""
     path: List[Position]
     objectives: CostVec
-    objective_names: Tuple[str, ...] = ("distance", "elevation", "slope")
+    objective_names: Tuple[str, ...] = ("distance", "elevation", "slope", "turn_angle")
     
     def to_dict(self) -> dict:
         return {
@@ -205,7 +212,7 @@ class RasterApexSearch:
         self.max_expansions = max_expansions
         
         # Objectives: [Distance, Elevation_Change, Slope]
-        self.objective_names = ["distance", "elevation", "slope"]
+        self.objective_names = ["distance", "elevation", "slope", "turn_angle"]
         self.num_objectives = len(self.objective_names)
         
         # Load or generate elevation data
@@ -215,7 +222,16 @@ class RasterApexSearch:
         elif bbox is not None and HAS_ELEVATION_LIB:
             print(f"Attempting to fetch real elevation data for bbox {bbox}...")
             try:
-                self.elevation = extract_elevation(bbox, resolution)
+                if _ELEVATION_SOURCE == 'srtm':
+                    self.elevation = _fetch_srtm_elevation(
+                        bbox=tuple(bbox),
+                        target_shape=(self.height, self.width),
+                        resolution=resolution,
+                    )
+                    if self.elevation is None:
+                        raise RuntimeError("SRTM download returned None")
+                else:
+                    self.elevation = extract_elevation(bbox, resolution)
                 print(f"Successfully loaded real elevation data. Range: {self.elevation.min():.1f}m - {self.elevation.max():.1f}m")
             except Exception as e:
                 print(f"Failed to fetch real elevation: {e}")
@@ -277,7 +293,7 @@ class RasterApexSearch:
         """
         Admissible heuristic for each objective.
         
-        Returns (h_distance, h_elevation, h_slope)
+        Returns (h_distance, h_elevation, h_slope, h_turn)
         """
         # Distance: Euclidean (admissible)
         h_dist = math.hypot(goal[0] - pos[0], goal[1] - pos[1])
@@ -288,7 +304,10 @@ class RasterApexSearch:
         # Slope: 0 is admissible (minimum possible slope cost)
         h_slope = 0.0
         
-        return (h_dist, h_elev, h_slope)
+        # Turn angle: 0 is admissible (best case = no turns remaining)
+        h_turn = 0.0
+        
+        return (h_dist, h_elev, h_slope, h_turn)
     
     def _get_successors(self, pos: Position, prev_dir: Optional[Tuple[int, int]]
                         ) -> List[Tuple[Position, CostVec, Tuple[int, int]]]:
@@ -323,7 +342,17 @@ class RasterApexSearch:
             # Objective 3: Slope at destination cell
             cost_slope = float(self.slope[nr, nc])
             
-            edge_cost = (cost_dist, cost_elev, cost_slope)
+            # Objective 4: Turn angle (radians between prev and current direction)
+            if prev_dir is None:
+                cost_turn = 0.0  # First move from source, no turn
+            else:
+                # Angle between vectors using atan2
+                # prev_dir and direction are (dr, dc) tuples
+                dot = prev_dir[0] * dr + prev_dir[1] * dc
+                cross = prev_dir[0] * dc - prev_dir[1] * dr
+                cost_turn = abs(math.atan2(cross, dot))  # 0 = straight, π = U-turn
+            
+            edge_cost = (cost_dist, cost_elev, cost_slope, cost_turn)
             successors.append((neighbor, edge_cost, direction))
         
         return successors
@@ -372,7 +401,7 @@ class RasterApexSearch:
         
         # Initialize start
         h0 = self._heuristic(source, target)
-        g0 = (0.0, 0.0, 0.0)
+        g0 = (0.0, 0.0, 0.0, 0.0)
         f0 = v_add(g0, h0)
         start_label = Label(state=source, g=g0, h=h0, f=f0, parent=None, prev_direction=None)
         

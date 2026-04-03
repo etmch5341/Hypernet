@@ -68,7 +68,7 @@ class AnimatedApexSearch:
         raster: np.ndarray,
         resolution: float = 30.0,
         elevation_array: Optional[np.ndarray] = None,
-        eps: Tuple[float, ...] = (0.1, 0.1, 0.1),
+        eps: Tuple[float, ...] = (0.1, 0.1, 0.1, 0.1),
         road_cost: float = 1.0,
         offroad_cost: float = 5.0,
         max_expansions: int = 500_000,
@@ -128,9 +128,10 @@ class AnimatedApexSearch:
         h_dist = math.hypot(goal[0] - pos[0], goal[1] - pos[1])
         h_elev = abs(self.elevation[goal] - self.elevation[pos])
         h_slope = 0.0
-        return (h_dist, h_elev, h_slope)
+        h_turn = 0.0
+        return (h_dist, h_elev, h_slope, h_turn)
     
-    def _get_successors(self, pos: Position):
+    def _get_successors(self, pos: Position, prev_dir: 'Optional[Tuple[int, int]]' = None):
         successors = []
         for dr, dc in self.DIRECTIONS:
             nr, nc = pos[0] + dr, pos[1] + dc
@@ -150,7 +151,15 @@ class AnimatedApexSearch:
             # Slope
             cost_slope = float(self.slope[nr, nc])
             
-            edge_cost = (cost_dist, cost_elev, cost_slope)
+            # Turn angle
+            if prev_dir is None:
+                cost_turn = 0.0
+            else:
+                dot = prev_dir[0] * dr + prev_dir[1] * dc
+                cross = prev_dir[0] * dc - prev_dir[1] * dr
+                cost_turn = abs(math.atan2(cross, dot))
+            
+            edge_cost = (cost_dist, cost_elev, cost_slope, cost_turn)
             successors.append((neighbor, edge_cost, (dr, dc)))
         return successors
     
@@ -211,7 +220,7 @@ class AnimatedApexSearch:
             cols = [p[1] for p in path]
             color = solution_colors[i % len(solution_colors)]
             ax.plot(cols, rows, color=color, linewidth=2.5, alpha=0.9,
-                    label=f'Sol {i+1}: d={cost[0]:.0f} e={cost[1]:.0f} s={cost[2]:.2f}')
+                    label=f'Sol {i+1}: d={cost[0]:.0f} e={cost[1]:.0f} s={cost[2]:.2f} t={cost[3]:.2f}')
         
         # Source and Target markers
         ax.scatter(source[1], source[0], c='#00FF88', s=250, marker='*',
@@ -292,7 +301,7 @@ class AnimatedApexSearch:
         
         # Initialize
         h0 = self._heuristic(source, target)
-        g0 = (0.0, 0.0, 0.0)
+        g0 = (0.0, 0.0, 0.0, 0.0)
         f0 = v_add(g0, h0)
         start_label = Label(
             state=source, g=g0, h=h0, f=f0, parent=None, prev_direction=None
@@ -349,7 +358,7 @@ class AnimatedApexSearch:
                 continue
             
             # Expand successors
-            for neighbor, edge_cost, direction in self._get_successors(pos):
+            for neighbor, edge_cost, direction in self._get_successors(pos, label.prev_direction):
                 g_succ = v_add(label.g, edge_cost)
                 h_succ = self._heuristic(neighbor, target)
                 f_succ = v_add(g_succ, h_succ)
@@ -496,7 +505,7 @@ def main():
     # Run animated search
     searcher = AnimatedApexSearch(
         raster=raster,
-        eps=(args.eps, args.eps, args.eps),
+        eps=(args.eps, args.eps, args.eps, args.eps),
         max_expansions=args.max_expansions,
         frame_interval=args.frame_interval
     )
@@ -506,8 +515,8 @@ def main():
     # Print results
     print("Pareto Front:")
     for i, sol in enumerate(solutions):
-        d, e, s = sol.objectives
-        print(f"  {i+1}. Distance={d:.1f}  Elevation={e:.1f}  Slope={s:.4f}")
+        d, e, s, t = sol.objectives
+        print(f"  {i+1}. Distance={d:.1f}  Elevation={e:.1f}  Slope={s:.4f}  Turn={t:.4f}")
     
     # Save GIF
     searcher.save_gif(args.output, fps=args.fps)

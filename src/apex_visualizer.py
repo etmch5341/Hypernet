@@ -105,7 +105,7 @@ class ApexVisualizer:
             return
         
         solutions = self.results['solutions']
-        objectives = self.results.get('objectives', ['distance', 'turns', 'elevation'])
+        objectives = self.results.get('objectives', ['distance', 'elevation', 'slope', 'turn_angle'])
         
         # Extract objective values
         obj_values = []
@@ -117,9 +117,18 @@ class ApexVisualizer:
         
         obj_values = np.array(obj_values)
         
-        fig, axes = plt.subplots(1, 3, figsize=figsize, facecolor='#111111')
+        # Generate all unique objective pairs
+        from itertools import combinations
+        pairs = list(combinations(range(len(objectives)), 2))
+        n_pairs = len(pairs)
+        n_cols = min(3, n_pairs)
+        n_rows = (n_pairs + n_cols - 1) // n_cols
         
-        pairs = [(0, 1), (0, 2), (1, 2)]
+        fig, axes = plt.subplots(n_rows, n_cols, figsize=(6 * n_cols, 5 * n_rows), facecolor='#111111')
+        if n_pairs == 1:
+            axes = [axes]
+        else:
+            axes = axes.flatten() if hasattr(axes, 'flatten') else [axes]
         
         for ax, (i, j) in zip(axes, pairs):
             ax.set_facecolor('#1a1a1a')
@@ -146,6 +155,10 @@ class ApexVisualizer:
                 ax.annotate(str(idx+1), (x, y), fontsize=8, color='yellow', 
                            alpha=0.8, ha='center', va='bottom',
                            xytext=(0, 5), textcoords='offset points')
+        
+        # Hide unused axes
+        for idx in range(n_pairs, len(axes)):
+            axes[idx].set_visible(False)
         
         plt.suptitle('Pareto Front - 2D Projections', color='white', fontsize=14, 
                     fontweight='bold', y=1.02)
