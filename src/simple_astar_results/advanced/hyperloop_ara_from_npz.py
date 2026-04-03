@@ -357,6 +357,7 @@ def ara_star_multi(start, goals, road_bitmap, frame_interval=FRAME_RECORD_INTERV
 
     # Animation data
     all_frames_sparse = []
+    iteration_data = []  # Track (epsilon, start_frame_idx, end_frame_idx, path) per iteration
     visited_snapshot = []
     total_expansions = 0
 
@@ -371,6 +372,9 @@ def ara_star_multi(start, goals, road_bitmap, frame_interval=FRAME_RECORD_INTERV
     while epsilon >= final_epsilon and iteration < max_iterations:
         iteration += 1
         print(f"\n--- Iteration {iteration} (epsilon = {epsilon:.2f}) ---")
+
+        # Track frame index before this iteration
+        start_frame_idx = len(all_frames_sparse)
 
         # Initialize OPEN with start state (or states from INCONS)
         open_set = []
@@ -403,6 +407,16 @@ def ara_star_multi(start, goals, road_bitmap, frame_interval=FRAME_RECORD_INTERV
         )
 
         all_frames_sparse.extend(frames)
+
+        # Track iteration boundary
+        end_frame_idx = len(all_frames_sparse)
+        iteration_data.append({
+            'epsilon': epsilon,
+            'iteration': iteration,
+            'start_frame_idx': start_frame_idx,
+            'end_frame_idx': end_frame_idx,
+            'path': path.copy() if path else None
+        })
 
         if path is not None:
             path_cost = compute_path_cost(path, road_bitmap)
@@ -441,10 +455,10 @@ def ara_star_multi(start, goals, road_bitmap, frame_interval=FRAME_RECORD_INTERV
     else:
         print(f"\nNo path found after {iteration} iterations.")
 
-    return best_path, all_frames_sparse, solution_history
+    return best_path, all_frames_sparse, solution_history, iteration_data
 
 
-def save_output_data(output_dir, road_bitmap, path, frames_sparse, metadata, solution_history=None):
+def save_output_data(output_dir, road_bitmap, path, frames_sparse, metadata, solution_history=None, iteration_data=None):
     """Save all data needed for animation."""
     os.makedirs(output_dir, exist_ok=True)
 
@@ -482,6 +496,11 @@ def save_output_data(output_dir, road_bitmap, path, frames_sparse, metadata, sol
     # Save sparse frames
     with open(os.path.join(output_dir, "astar_sparse_frames.pkl"), "wb") as f:
         pickle.dump(frames_sparse, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+    # Save iteration data (for iterative animation)
+    if iteration_data:
+        with open(os.path.join(output_dir, "ara_iteration_data.pkl"), "wb") as f:
+            pickle.dump(iteration_data, f, protocol=pickle.HIGHEST_PROTOCOL)
 
     # Save final path
     if path:
@@ -604,7 +623,7 @@ def main():
 
     # Run ARA* search
     print("\n" + "=" * 70)
-    path, frames_sparse, solution_history = ara_star_multi(
+    path, frames_sparse, solution_history, iteration_data = ara_star_multi(
         start, goals, raster,
         frame_interval=FRAME_RECORD_INTERVAL,
         max_expansions=args.max_expansions,
@@ -616,7 +635,7 @@ def main():
     print("=" * 70)
 
     # Save output data
-    save_output_data(args.output, raster, path, frames_sparse, metadata, solution_history)
+    save_output_data(args.output, raster, path, frames_sparse, metadata, solution_history, iteration_data)
 
     # Create animations
     if not args.no_animation and path is not None:
