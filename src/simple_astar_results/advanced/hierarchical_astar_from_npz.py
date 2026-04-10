@@ -28,9 +28,24 @@ DEFAULT_CLUSTER_SIZE = 40
 CLUSTER_SIZE = DEFAULT_CLUSTER_SIZE
 ALLOW_DIAGONAL = True
 FRAME_RECORD_INTERVAL = 100
-ON_ROAD_COST = 1.0
-OFF_ROAD_COST = 5.0
+# Traversal cost: step = BASE_COST + cell_cost * COST_RANGE
+# cell_cost is normalised to [0.0 (cheapest) … 1.0 (most expensive)]
+# → cheapest cell: 1.0 × euclidean dist  (matches old ON_ROAD_COST)
+# → costliest cell: 5.0 × euclidean dist (matches old OFF_ROAD_COST)
+BASE_COST  = 1.0
+COST_RANGE = 4.0
+# Cells cheaper than this threshold are eligible for gateway nodes.
+GATEWAY_COST_THRESHOLD = 0.5
 MAX_EXPANSIONS = 5_000_000
+
+# Priority order for finding the grid array inside an NPZ file.
+RASTER_KEY_PRIORITY = [
+    'raster',
+    'cost_map_normalized',
+    'env_map_normalized',
+    'cost_map',
+    'env_map',
+]
 
 ANIMATION_FPS = 15
 ANIMATION_FRAMES = 150
@@ -72,8 +87,8 @@ def _compute_cluster_edges(args):
     """
     grid_bytes, height, width, c_size, cluster_id, node_list = args
 
-    # Reconstruct the numpy array from raw bytes (zero-copy view)
-    grid = np.frombuffer(grid_bytes, dtype=np.uint8).reshape(height, width)
+    # Reconstruct the float32 cost grid from raw bytes
+    grid = np.frombuffer(grid_bytes, dtype=np.float32).reshape(height, width)
 
     cr, cc = cluster_id
     r0 = cr * c_size
@@ -122,7 +137,7 @@ def _compute_cluster_edges(args):
                                (1,1),(1,-1),(-1,1),(-1,-1)]:
                     nr, nc = curr[0] + dr, curr[1] + dc
                     if rmin <= nr < rmax and cmin <= nc < cmax:
-                        step = ON_ROAD_COST if grid[nr, nc] == 1 else OFF_ROAD_COST
+                        step = BASE_COST + grid[nr, nc] * COST_RANGE
                         ng   = g + math.hypot(dr, dc) * step
                         if ng + 1e-9 < dist.get((nr, nc), float('inf')):
                             dist[(nr, nc)] = ng
@@ -191,7 +206,7 @@ class HierarchicalGraph:
         # We serialise the grid as raw bytes once and share it across
         # all worker tasks – much cheaper than pickling the full array
         # repeatedly.
-        grid_bytes = self.grid.astype(np.uint8).tobytes()
+        grid_bytes = self.grid.astype(np.float32).tobytes()
         height, width, c_size = self.height, self.width, self.c_size
 
         # Build one task per cluster that has at least 2 nodes
@@ -281,7 +296,7 @@ class HierarchicalGraph:
 
             if (0 <= r_a < self.height and 0 <= c_a < self.width and
                     0 <= r_b < self.height and 0 <= c_b < self.width):
-                if self.grid[r_a, c_a] == 1 and self.grid[r_b, c_b] == 1:
+                if self.grid[r_a, c_a] < GATEWAY_COST_THRESHOLD and self.grid[r_b, c_b] < GATEWAY_COST_THRESHOLD:
                     segment.append(((r_a, c_a), (r_b, c_b)))
                 else:
                     if segment:
@@ -336,7 +351,7 @@ class HierarchicalGraph:
                            (1,1),(1,-1),(-1,1),(-1,-1)]:
                 nr, nc = curr[0] + dr, curr[1] + dc
                 if rmin <= nr < rmax and cmin <= nc < cmax:
-                    step = ON_ROAD_COST if self.grid[nr, nc] == 1 else OFF_ROAD_COST
+                    step = BASE_COST + self.grid[nr, nc] * COST_RANGE
                     ng   = g + math.hypot(dr, dc) * step
                     if ng + 1e-9 < dist.get((nr, nc), float('inf')):
                         dist[(nr, nc)] = ng
@@ -352,6 +367,93 @@ def get_mst_heuristic(curr, goals, mask):
     if not remaining:
         return 0.0
     return min(math.hypot(g[0] - curr[0], g[1] - curr[1]) for g in remaining)
+
+
+def remove_path_loops(path):
+    """
+    Remove loops from a pixel-level path in O(n).
+
+    Loops arise in HPA* when the unconstrained local A* used during refinement
+    routes a segment through cells that belong to a different segment of the
+    abstract path (because it searches the whole grid, not just the local cluster).
+
+    Strategy: record the *last* index at which each coordinate appears, then
+    walk forward and always jump straight to that last index — skipping the
+    loop in between.
+    """
+    if len(path) < 3:
+        return path
+    last_seen = {p: i for i, p in enumerate(path)}
+    result = []
+    i = 0
+    while i < len(path):
+        p = path[i]
+        result.append(p)
+        i = last_seen[p] + 1   # skip forward past the last occurrence of p
+    return result
+
+
+def _astar_segment(start, goal, grid):
+    """
+    Minimal unconstrained A* returning the pixel path from start to goal.
+    Used to fill gaps left by incomplete came_from chains at cluster boundaries.
+    Returns a list that includes both start and goal.
+    """
+    h, w = grid.shape
+    pq = [(math.hypot(start[0] - goal[0], start[1] - goal[1]), 0.0, start)]
+    came_from = {}
+    gscore    = {start: 0.0}
+    visited   = set()
+
+    while pq:
+        _, g, curr = heapq.heappop(pq)
+        if curr in visited:
+            continue
+        visited.add(curr)
+        if curr == goal:
+            seg, c = [], goal
+            while c in came_from:
+                seg.append(c)
+                c = came_from[c]
+            seg.append(start)
+            seg.reverse()
+            return seg
+        for dr, dc in [(0,1),(0,-1),(1,0),(-1,0),(1,1),(1,-1),(-1,1),(-1,-1)]:
+            nr, nc = curr[0] + dr, curr[1] + dc
+            if 0 <= nr < h and 0 <= nc < w:
+                step   = BASE_COST + grid[nr, nc] * COST_RANGE
+                ng     = g + math.hypot(dr, dc) * step
+                ncoord = (nr, nc)
+                if ng + 1e-9 < gscore.get(ncoord, float('inf')):
+                    gscore[ncoord]    = ng
+                    came_from[ncoord] = curr
+                    heapq.heappush(pq, (ng + math.hypot(nr - goal[0], nc - goal[1]), ng, ncoord))
+
+    return [start, goal]   # unreachable on a connected grid; fallback
+
+
+def stitch_path_gaps(path, graph):
+    """
+    Scan the refined path for gaps (non-8-adjacent consecutive cells) and fill
+    each one with a direct pixel A* path.
+
+    Gaps at cluster boundaries arise when the came_from backtracking chain in
+    refine_path is broken: a gscore update overwrites came_from[n] with a new
+    predecessor, orphaning the old chain so backtracking terminates early and
+    the segment is missing a few cells at the cluster boundary crossing.
+    """
+    if len(path) < 2:
+        return path
+    result = [path[0]]
+    for nxt in path[1:]:
+        prev = result[-1]
+        if abs(nxt[0] - prev[0]) <= 1 and abs(nxt[1] - prev[1]) <= 1:
+            result.append(nxt)
+        else:
+            # Gap detected: fill with direct A*
+            fill = _astar_segment(prev, nxt, graph.grid)
+            result.extend(fill[1:])   # prev already in result
+    return result
 
 
 def refine_path(abstract_path, graph, record_visited=False):
@@ -390,7 +492,7 @@ def refine_path(abstract_path, graph, record_visited=False):
                            (1,1),(1,-1),(-1,1),(-1,-1)]:
                 nr, nc = curr[0] + dr, curr[1] + dc
                 if 0 <= nr < graph.height and 0 <= nc < graph.width:
-                    step        = ON_ROAD_COST if graph.grid[nr, nc] == 1 else OFF_ROAD_COST
+                    step        = BASE_COST + graph.grid[nr, nc] * COST_RANGE
                     tentative_g = g + math.hypot(dr, dc) * step
                     ncoord      = (nr, nc)
                     if tentative_g + 1e-9 < gscore.get(ncoord, float('inf')):
@@ -412,7 +514,8 @@ def refine_path(abstract_path, graph, record_visited=False):
         else:
             full_path.append(goal)
 
-    return full_path, all_visited
+    clean = stitch_path_gaps(remove_path_loops(full_path), graph)
+    return clean, all_visited
 
 
 def a_star_hpa(start, goals, road_bitmap):
@@ -428,14 +531,14 @@ def a_star_hpa(start, goals, road_bitmap):
         candidates = list(graph.clusters.get(cid, []))
 
         if not candidates:
-            search_radius = max(1, graph.c_size * 2)
-            near = []
-            for node in graph.nodes.keys():
-                dr = abs(node[0] - p[0])
-                dc = abs(node[1] - p[1])
-                if dr <= search_radius and dc <= search_radius:
-                    near.append((dr + dc, node))
-            near.sort(key=lambda x: x[0])
+            # Search ALL gateway nodes by Manhattan distance (no radius cap).
+            # A fixed radius of c_size*2 is too small when clusters are tiny,
+            # leaving start/goal completely disconnected from the abstract graph.
+            near = sorted(
+                ((abs(node[0] - p[0]) + abs(node[1] - p[1]), node)
+                 for node in graph.nodes.keys()),
+                key=lambda x: x[0],
+            )
             candidates = [n for _, n in near[:8]]
 
         for node in candidates:
@@ -520,7 +623,16 @@ def a_star_hpa(start, goals, road_bitmap):
 
     if visited_snapshot:
         frames_sparse.append((expansions, visited_snapshot.copy()))
-    return None, frames_sparse, expansions
+
+    # Fallback: abstract graph is disconnected (common with small cluster sizes
+    # where gateway nodes are sparse or start/goal can't reach them).
+    # Chain direct pixel-level A* segments through goals in declaration order.
+    print("  [HPA*] Abstract path not found — falling back to direct pixel A*")
+    fallback_path = [start]
+    for g in goals[1:]:   # goals[0] == start
+        seg = _astar_segment(fallback_path[-1], g, road_bitmap)
+        fallback_path.extend(seg[1:])
+    return fallback_path, frames_sparse, expansions
 
 
 # -------------------- DATA HANDLING --------------------
@@ -529,16 +641,59 @@ def load_npz_test_set(npz_path):
     """
     Load input NPZ read-only, copy arrays into plain numpy objects,
     then close the file handle so it can never be modified.
+
+    Returns a float32 cost grid normalised to [0.0, 1.0] where
+    0.0 = cheapest/most traversable and 1.0 = most expensive.
+
+    Supported NPZ layouts (tried in priority order):
+      'raster'             – binary uint8 road map (1=road, 0=off-road)
+      'cost_map_normalized'– pre-normalised float cost map
+      'env_map_normalized' – pre-normalised float environmental map
+      'cost_map'           – raw float cost map (will be normalised)
+      'env_map'            – raw float environmental map (will be normalised)
+      <first 2-D numeric>  – fallback: any other 2-D numeric array
     """
-    data        = np.load(npz_path, allow_pickle=True, mmap_mode='r')
-    raster      = np.array(data['raster'])
+    data = np.load(npz_path, allow_pickle=True, mmap_mode='r')
+
+    # --- locate the grid array ---
+    raster_key = None
+    for key in RASTER_KEY_PRIORITY:
+        if key in data:
+            raster_key = key
+            break
+    if raster_key is None:
+        for key in data.keys():
+            v = data[key]
+            if hasattr(v, 'ndim') and v.ndim == 2 and np.issubdtype(v.dtype, np.number):
+                raster_key = key
+                break
+    if raster_key is None:
+        raise ValueError(
+            f"No 2-D numeric grid found in {npz_path}. Keys present: {list(data.keys())}"
+        )
+
+    raw = np.array(data[raster_key])
+
+    # --- normalise to float32 cost grid [0.0 = cheapest, 1.0 = costliest] ---
+    if np.issubdtype(raw.dtype, np.integer):
+        # Binary raster: road (1) → 0.0 cost, off-road (0) → 1.0 cost
+        cost_grid = np.where(raw == 1, 0.0, 1.0).astype(np.float32)
+    else:
+        # Float cost map: normalise min→0.0, max→1.0
+        lo, hi = float(raw.min()), float(raw.max())
+        if hi > lo:
+            cost_grid = ((raw - lo) / (hi - lo)).astype(np.float32)
+        else:
+            cost_grid = np.zeros_like(raw, dtype=np.float32)
+
     goal_points = np.array(data['goal_points'], dtype=object)
     metadata    = {
-        'width':  int(data['width'])  if 'width'  in data else raster.shape[1],
-        'height': int(data['height']) if 'height' in data else raster.shape[0],
+        'width':  int(data['width'])  if 'width'  in data else cost_grid.shape[1],
+        'height': int(data['height']) if 'height' in data else cost_grid.shape[0],
+        'grid_key': raster_key,
     }
     data.close()
-    return raster, goal_points, metadata
+    return cost_grid, goal_points, metadata
 
 
 def save_output_data(output_dir, input_path, road_bitmap, path, frames_sparse, metadata):
@@ -558,13 +713,16 @@ def save_output_data(output_dir, input_path, road_bitmap, path, frames_sparse, m
 
     os.makedirs(output_dir, exist_ok=True)
 
+    # Animator expects uint8 where 1 = "road" (cheap) and 0 = off-road.
+    # For float32 cost grids, treat cells cheaper than the gateway threshold as road.
+    animator_bitmap = (road_bitmap < GATEWAY_COST_THRESHOLD).astype(np.uint8)
     np.savez_compressed(
         os.path.join(output_dir, "hpa_road_bitmap.npz"),
-        road_bitmap=road_bitmap.astype(np.uint8),
+        road_bitmap=animator_bitmap,
     )
     np.savez_compressed(
         os.path.join(output_dir, "hpa_protected_bitmap.npz"),
-        protected_bitmap=np.zeros_like(road_bitmap, dtype=np.uint8),
+        protected_bitmap=np.zeros_like(animator_bitmap, dtype=np.uint8),
     )
     with open(os.path.join(output_dir, "astar_sparse_frames.pkl"), "wb") as f:
         pickle.dump(frames_sparse, f, protocol=pickle.HIGHEST_PROTOCOL)
@@ -645,14 +803,21 @@ def main():
     global CLUSTER_SIZE, NUM_WORKERS
     CLUSTER_SIZE = max(1, int(args.cluster_size))
 
-    raster, goal_points, meta = load_npz_test_set(args.input)
+    cost_grid, goal_points, meta = load_npz_test_set(args.input)
+    print(f"Grid key         : {meta['grid_key']}")
 
     goals = []
     for item in goal_points:
-        try:
-            x, y, _ = item
-        except Exception:
-            x, y = item[:2]
+        # Two formats observed:
+        #   [x, y, name]          — austin_test_raster style
+        #   [name, y, x, lon, lat] — geometry_cost_map style (name first)
+        if isinstance(item[0], str):
+            x, y = item[1], item[2]  # format: [name, col_x, row_y, ...]
+        else:
+            try:
+                x, y, _ = item
+            except Exception:
+                x, y = item[:2]
         goals.append((int(y), int(x)))
     if not goals:
         raise SystemExit("No goal points found in test set.")
@@ -662,7 +827,7 @@ def main():
     # Each worker receives a full copy of the grid as bytes (on Windows/macOS
     # with spawn). We leave at least half of available RAM free for the main
     # process (abstract graph, priority queue, frames, etc.).
-    raster_bytes = raster.nbytes
+    raster_bytes = cost_grid.nbytes
     try:
         import psutil
         available_ram = psutil.virtual_memory().available
@@ -694,7 +859,7 @@ def main():
         NUM_WORKERS = min(cpu_workers, ram_safe_workers)
 
     print(f"Cluster size     : {CLUSTER_SIZE}")
-    print(f"Raster           : {raster.shape[0]} x {raster.shape[1]}  "
+    print(f"Grid             : {cost_grid.shape[0]} x {cost_grid.shape[1]}  "
           f"({raster_bytes / 1024**2:.1f} MB)")
     print(f"Available RAM    : {available_ram / 1024**2:.0f} MB")
     print(f"RAM-safe workers : {ram_safe_workers}  (CPU cores: {cpu_workers})")
@@ -714,7 +879,7 @@ def main():
 
     try:
         t0 = time.time()
-        path, frames, expansions = a_star_hpa(start, goals, raster)
+        path, frames, expansions = a_star_hpa(start, goals, cost_grid)
         t1 = time.time()
         search_time = t1 - t0
     except Exception as exc:
@@ -736,7 +901,7 @@ def main():
             input_path       = args.input,
             cluster_size     = CLUSTER_SIZE,
             goals            = goals,
-            raster_shape     = raster.shape,
+            raster_shape     = cost_grid.shape,
             search_time      = search_time,
             expansions       = expansions,
             frames_recorded  = len(frames),
@@ -752,7 +917,7 @@ def main():
     if fatal_error is not None:
         raise fatal_error
 
-    save_output_data(args.output, args.input, raster, path, frames, meta)
+    save_output_data(args.output, args.input, cost_grid, path, frames, meta)
 
     print("Attempting to create animation (HPA)...")
     try:

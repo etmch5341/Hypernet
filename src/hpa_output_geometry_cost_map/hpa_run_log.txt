@@ -1,0 +1,180 @@
+============================================================
+Timestamp        : 2026-04-03 21:49:28
+Input file       : /workspace/src/sample-test-set/geometry_cost_map.npz
+Output directory : /workspace/src/hpa_output_geometry_cost_map
+Cluster size     : 40
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3318 MB
+CPU cores        : 4
+RAM-safe workers : 233
+Worker processes : 4
+Goal points      : 2
+Status           : no path
+Path length      : N/A nodes
+Search time      : 0.026s
+Expansions       : 1
+Frames recorded  : 1
+Total visited    : 1
+
+============================================================
+Timestamp        : 2026-04-03 21:49:46
+Input file       : /workspace/src/sample-test-set/geometry_cost_map.npz
+Output directory : /workspace/src/hpa_output_geometry_cost_map
+Cluster size     : 40
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3312 MB
+CPU cores        : 4
+RAM-safe workers : 232
+Worker processes : 4
+Goal points      : 2
+Status           : no path
+Path length      : N/A nodes
+Search time      : 0.024s
+Expansions       : 1
+Frames recorded  : 1
+Total visited    : 1
+
+============================================================
+Timestamp        : 2026-04-03 21:50:43
+Input file       : /workspace/src/sample-test-set/geometry_cost_map.npz
+Output directory : /workspace/src/hpa_output_geometry_cost_map
+Cluster size     : 100
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3312 MB
+CPU cores        : 4
+RAM-safe workers : 232
+Worker processes : 4
+Goal points      : 2
+Status           : no path
+Path length      : N/A nodes
+Search time      : 0.013s
+Expansions       : 1
+Frames recorded  : 1
+Total visited    : 1
+
+============================================================
+Timestamp        : 2026-04-03 21:50:49
+Input file       : /workspace/src/sample-test-set/geometry_cost_map.npz
+Output directory : /workspace/src/hpa_output_geometry_cost_map
+Cluster size     : 10
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3302 MB
+CPU cores        : 4
+RAM-safe workers : 231
+Worker processes : 4
+Goal points      : 2
+Status           : no path
+Path length      : N/A nodes
+Search time      : 0.072s
+Expansions       : 1
+Frames recorded  : 1
+Total visited    : 1
+
+============================================================
+Timestamp        : 2026-04-03 21:50:53
+Input file       : /workspace/src/sample-test-set/geometry_cost_map.npz
+Output directory : /workspace/src/hpa_output_geometry_cost_map
+Cluster size     : 1
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3286 MB
+CPU cores        : 4
+RAM-safe workers : 230
+Worker processes : 4
+Goal points      : 2
+Status           : no path
+Path length      : N/A nodes
+Search time      : 1.023s
+Expansions       : 1
+Frames recorded  : 1
+Total visited    : 1
+
+============================================================
+Timestamp        : 2026-04-03 21:57:48
+Input file       : /workspace/src/sample-test-set/geometry_cost_map.npz
+Output directory : /workspace/src/hpa_output_geometry_cost_map
+Cluster size     : 10
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3320 MB
+CPU cores        : 4
+RAM-safe workers : 1865
+Worker processes : 4
+Goal points      : 2
+Status           : path found
+Path length      : 727 nodes
+Search time      : 7.978s
+Expansions       : 6769
+Frames recorded  : 68
+Total visited    : 41771
+
+============================================================
+Timestamp        : 2026-04-03 21:59:44
+Input file       : /workspace/src/sample-test-set/geometry_cost_map.npz
+Output directory : /workspace/src/hpa_output_geometry_cost_map
+Cluster size     : 40
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3273 MB
+CPU cores        : 4
+RAM-safe workers : 1838
+Worker processes : 4
+Goal points      : 2
+Status           : path found
+Path length      : 693 nodes
+Search time      : 1.314s
+Expansions       : 364
+Frames recorded  : 4
+Total visited    : 2286
+
+============================================================
+Timestamp        : 2026-04-03 22:04:00
+Input file       : /workspace/src/sample-test-set/geometry_cost_map.npz
+Output directory : /workspace/src/hpa_output_geometry_cost_map
+Cluster size     : 40
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3284 MB
+CPU cores        : 4
+RAM-safe workers : 1845
+Worker processes : 4
+Goal points      : 2
+Status           : path found
+Path length      : 693 nodes
+Search time      : 0.968s
+Expansions       : 364
+Frames recorded  : 4
+Total visited    : 2286
+
+============================================================
+Timestamp        : 2026-04-03 22:04:22
+Input file       : /workspace/src/sample-test-set/geometry_cost_map.npz
+Output directory : /workspace/src/hpa_output_geometry_cost_map
+Cluster size     : 10
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3288 MB
+CPU cores        : 4
+RAM-safe workers : 1847
+Worker processes : 4
+Goal points      : 2
+Status           : path found
+Path length      : 727 nodes
+Search time      : 8.561s
+Expansions       : 6769
+Frames recorded  : 68
+Total visited    : 41771
+
+============================================================
+Timestamp        : 2026-04-10 20:41:57
+Input file       : /workspace/src/sample-test-set/geometry_cost_map.npz
+Output directory : /workspace/src/hpa_output_geometry_cost_map
+Cluster size     : 40
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3326 MB
+CPU cores        : 4
+RAM-safe workers : 467
+Worker processes : 4
+Goal points      : 2
+Status           : path found
+Path length      : 741 nodes
+Search time      : 9.349s
+Expansions       : 719
+Frames recorded  : 8
+Total visited    : 14286
+

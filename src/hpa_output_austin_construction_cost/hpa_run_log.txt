@@ -1,0 +1,90 @@
+============================================================
+Timestamp        : 2026-04-03 22:29:17
+Input file       : /workspace/src/sample-test-set/austin_construction_cost.npz
+Output directory : /workspace/src/hpa_output_austin_construction_cost
+Cluster size     : 40
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3346 MB
+CPU cores        : 4
+RAM-safe workers : 1879
+Worker processes : 4
+Goal points      : 2
+Status           : no path
+Path length      : N/A nodes
+Search time      : 0.030s
+Expansions       : 1
+Frames recorded  : 1
+Total visited    : 1
+
+============================================================
+Timestamp        : 2026-04-03 22:29:30
+Input file       : /workspace/src/sample-test-set/austin_construction_cost.npz
+Output directory : /workspace/src/hpa_output_austin_construction_cost
+Cluster size     : 1
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3347 MB
+CPU cores        : 4
+RAM-safe workers : 1880
+Worker processes : 4
+Goal points      : 2
+Status           : no path
+Path length      : N/A nodes
+Search time      : 1.090s
+Expansions       : 1
+Frames recorded  : 1
+Total visited    : 6
+
+============================================================
+Timestamp        : 2026-04-03 22:46:31
+Input file       : /workspace/src/sample-test-set/austin_construction_cost.npz
+Output directory : /workspace/src/hpa_output_austin_construction_cost
+Cluster size     : 40
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3293 MB
+CPU cores        : 4
+RAM-safe workers : 462
+Worker processes : 4
+Goal points      : 2
+Status           : path found
+Path length      : 1475 nodes
+Search time      : 26.683s
+Expansions       : 1111
+Frames recorded  : 12
+Total visited    : 67965
+
+============================================================
+Timestamp        : 2026-04-03 22:50:20
+Input file       : /workspace/src/sample-test-set/austin_construction_cost.npz
+Output directory : /workspace/src/hpa_output_austin_construction_cost
+Cluster size     : 40
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3305 MB
+CPU cores        : 4
+RAM-safe workers : 464
+Worker processes : 4
+Goal points      : 2
+Status           : path found
+Path length      : 1307 nodes
+Search time      : 26.757s
+Expansions       : 1111
+Frames recorded  : 12
+Total visited    : 67965
+
+============================================================
+Timestamp        : 2026-04-10 20:38:03
+Input file       : /workspace/src/sample-test-set/austin_construction_cost.npz
+Output directory : /workspace/src/hpa_output_austin_construction_cost
+Cluster size     : 40
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3359 MB
+CPU cores        : 4
+RAM-safe workers : 471
+Worker processes : 4
+Goal points      : 2
+Status           : path found
+Path length      : 1307 nodes
+Search time      : 26.868s
+Expansions       : 1111
+Frames recorded  : 12
+Total visited    : 67965
+

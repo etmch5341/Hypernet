@@ -19,14 +19,21 @@ class HPAStarAnimator:
     def load_data(self):
         # Robust loading: if any file is missing/corrupt, fall back to sane defaults
         try:
-            road_data = np.load(os.path.join(self.output_dir, "road_bitmap.npz"))
+            # Support both legacy name (road_bitmap.npz) and current name (hpa_road_bitmap.npz)
+            road_path = os.path.join(self.output_dir, "hpa_road_bitmap.npz")
+            if not os.path.exists(road_path):
+                road_path = os.path.join(self.output_dir, "road_bitmap.npz")
+            road_data = np.load(road_path)
             self.road_bitmap = road_data['road_bitmap']
         except Exception as e:
             print(f"Warning: failed to load road_bitmap.npz: {e}")
             self.road_bitmap = np.zeros((1, 1), dtype=np.uint8)
 
         try:
-            protected_data = np.load(os.path.join(self.output_dir, "protected_bitmap.npz"))
+            prot_path = os.path.join(self.output_dir, "hpa_protected_bitmap.npz")
+            if not os.path.exists(prot_path):
+                prot_path = os.path.join(self.output_dir, "protected_bitmap.npz")
+            protected_data = np.load(prot_path)
             self.protected_bitmap = protected_data['protected_bitmap']
         except Exception:
             # fallback to empty protected map with same shape as road_bitmap

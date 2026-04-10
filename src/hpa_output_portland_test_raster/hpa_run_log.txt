@@ -1,0 +1,54 @@
+============================================================
+Timestamp        : 2026-04-03 22:30:33
+Input file       : /workspace/src/sample-test-set/portland_test_raster.npz
+Output directory : /workspace/src/hpa_output_portland_test_raster
+Cluster size     : 40
+Raster shape     : 1014 rows x 707 cols
+Available RAM    : 3339 MB
+CPU cores        : 4
+RAM-safe workers : 1220
+Worker processes : 4
+Goal points      : 2
+Status           : path found
+Path length      : 2833 nodes
+Search time      : 44.150s
+Expansions       : 1574
+Frames recorded  : 16
+Total visited    : 25176
+
+============================================================
+Timestamp        : 2026-04-03 22:42:53
+Input file       : /workspace/src/sample-test-set/portland_test_raster.npz
+Output directory : /workspace/src/hpa_output_portland_test_raster
+Cluster size     : 40
+Raster shape     : 1014 rows x 707 cols
+Available RAM    : 3336 MB
+CPU cores        : 4
+RAM-safe workers : 304
+Worker processes : 4
+Goal points      : 2
+Status           : path found
+Path length      : 2833 nodes
+Search time      : 54.540s
+Expansions       : 1574
+Frames recorded  : 16
+Total visited    : 25194
+
+============================================================
+Timestamp        : 2026-04-03 22:52:13
+Input file       : /workspace/src/sample-test-set/portland_test_raster.npz
+Output directory : /workspace/src/hpa_output_portland_test_raster
+Cluster size     : 40
+Raster shape     : 1014 rows x 707 cols
+Available RAM    : 3261 MB
+CPU cores        : 4
+RAM-safe workers : 298
+Worker processes : 4
+Goal points      : 2
+Status           : path found
+Path length      : 1634 nodes
+Search time      : 77.029s
+Expansions       : 1574
+Frames recorded  : 16
+Total visited    : 25194
+
