@@ -178,3 +178,21 @@ Expansions       : 719
 Frames recorded  : 8
 Total visited    : 14286
 
+============================================================
+Timestamp        : 2026-04-10 21:33:13
+Input file       : /workspace/src/sample-test-set/geometry_cost_map.npz
+Output directory : /workspace/src/hpa_output_geometry_cost_map
+Cluster size     : 40
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3272 MB
+CPU cores        : 4
+RAM-safe workers : 459
+Worker processes : 4
+Goal points      : 2
+Status           : path found
+Path length      : 741 nodes
+Search time      : 8.750s
+Expansions       : 719
+Frames recorded  : 8
+Total visited    : 12217
+

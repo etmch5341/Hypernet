@@ -88,3 +88,21 @@ Expansions       : 1111
 Frames recorded  : 12
 Total visited    : 67965
 
+============================================================
+Timestamp        : 2026-04-10 21:31:30
+Input file       : /workspace/src/sample-test-set/austin_construction_cost.npz
+Output directory : /workspace/src/hpa_output_austin_construction_cost
+Cluster size     : 40
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3269 MB
+CPU cores        : 4
+RAM-safe workers : 459
+Worker processes : 4
+Goal points      : 2
+Status           : path found
+Path length      : 1307 nodes
+Search time      : 24.743s
+Expansions       : 1111
+Frames recorded  : 12
+Total visited    : 61177
+

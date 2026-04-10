@@ -16,3 +16,21 @@ Expansions       : 635
 Frames recorded  : 7
 Total visited    : 53479
 
+============================================================
+Timestamp        : 2026-04-10 21:32:30
+Input file       : /workspace/src/sample-test-set/austin_environmental_impact.npz
+Output directory : /workspace/src/hpa_output_austin_environmental_impact
+Cluster size     : 40
+Raster shape     : 540 rows x 864 cols
+Available RAM    : 3271 MB
+CPU cores        : 4
+RAM-safe workers : 459
+Worker processes : 4
+Goal points      : 2
+Status           : path found
+Path length      : 1568 nodes
+Search time      : 17.819s
+Expansions       : 635
+Frames recorded  : 7
+Total visited    : 47422
+

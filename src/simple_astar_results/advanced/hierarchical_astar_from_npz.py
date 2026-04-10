@@ -524,7 +524,6 @@ def a_star_hpa(start, goals, road_bitmap):
 
     # Connect start/goals into the abstract graph
     points_to_connect = [start] + [g for g in goals if g != start]
-    connection_visited = []
 
     for p in points_to_connect:
         cid        = graph._get_cluster_id(*p)
@@ -544,10 +543,9 @@ def a_star_hpa(start, goals, road_bitmap):
         for node in candidates:
             node_cid      = graph._get_cluster_id(*node)
             cid_for_search = cid if node_cid == cid else None
-            d, visited_cells = graph.local_astar_dist(p, node, cid_for_search, record_visited=True)
+            d, _ = graph.local_astar_dist(p, node, cid_for_search, record_visited=False)
             if d < float('inf'):
                 graph._add_edge(p, node, d)
-                connection_visited.extend(visited_cells)
 
     start_mask = 0
     for i, g in enumerate(goals):
@@ -560,9 +558,6 @@ def a_star_hpa(start, goals, road_bitmap):
     expansions      = 0
     frames_sparse   = []
     visited_snapshot = []
-
-    if connection_visited:
-        visited_snapshot.extend(connection_visited)
 
     print("\nRunning Hierarchical Search...")
     while pq:

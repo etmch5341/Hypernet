@@ -1,0 +1,54 @@
+============================================================
+Timestamp        : 2026-04-10 21:37:31
+Input file       : /workspace/src/sample-test-set/seattle_test_raster.npz
+Output directory : /workspace/src/hpa_output_seattle_test_raster
+Cluster size     : 40
+Raster shape     : 102 rows x 142 cols
+Available RAM    : 3263 MB
+CPU cores        : 4
+RAM-safe workers : 14763
+Worker processes : 4
+Goal points      : 2
+Status           : path found
+Path length      : 206 nodes
+Search time      : 1.204s
+Expansions       : 95
+Frames recorded  : 1
+Total visited    : 1012
+
+============================================================
+Timestamp        : 2026-04-10 21:37:53
+Input file       : /workspace/src/sample-test-set/seattle_test_raster.npz
+Output directory : /workspace/src/hpa_output_seattle_test_raster
+Cluster size     : 20
+Raster shape     : 102 rows x 142 cols
+Available RAM    : 3274 MB
+CPU cores        : 4
+RAM-safe workers : 14812
+Worker processes : 4
+Goal points      : 2
+Status           : path found
+Path length      : 205 nodes
+Search time      : 0.432s
+Expansions       : 190
+Frames recorded  : 2
+Total visited    : 1630
+
+============================================================
+Timestamp        : 2026-04-10 21:38:04
+Input file       : /workspace/src/sample-test-set/seattle_test_raster.npz
+Output directory : /workspace/src/hpa_output_seattle_test_raster
+Cluster size     : 1
+Raster shape     : 102 rows x 142 cols
+Available RAM    : 3269 MB
+CPU cores        : 4
+RAM-safe workers : 14792
+Worker processes : 4
+Goal points      : 2
+Status           : path found
+Path length      : 201 nodes
+Search time      : 0.142s
+Expansions       : 1997
+Frames recorded  : 20
+Total visited    : 12301
+
