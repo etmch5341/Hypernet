@@ -125,8 +125,11 @@ class SearchStats:
     pareto_size: int = 0
     runtime_seconds: float = 0.0
     
-    # Per-iteration tracking for visualization
+    # Per-state spatial diagnostics
+    expansion_map: Optional[np.ndarray] = None
+    prune_map: Optional[np.ndarray] = None
     iteration_log: List[dict] = field(default_factory=list)
+    diagnostic_frames: List[dict] = field(default_factory=list)
     
     def log_iteration(self, iteration: int, expanded: int, pareto_size: int, 
                       queue_size: int, elapsed: float):
@@ -184,7 +187,12 @@ class RasterApexSearch:
         offroad_cost: float = 5.0,
         allow_diagonal: bool = True,
         log_interval: int = 10000,
-        max_expansions: int = 1_000_000
+        max_expansions: int = 1_000_000,
+        custom_costmaps: Optional[Dict[str, np.ndarray]] = None,
+        custom_objective_names: Optional[List[str]] = None,
+        turn_stiffness: float = 1.0,
+        h_weight: float = 1.0,
+        road_discount: float = 1.0  # New: Discount multiplier for on-road movement (0.0-1.0)
     ):
         """
         Initialize the search.
@@ -192,14 +200,7 @@ class RasterApexSearch:
         Args:
             raster: 2D array where 1=road, 0=off-road
             resolution: Meters per pixel
-            elevation_array: Optional 2D array of elevation values (meters)
-            bbox: Optional bounding box (min_lon, min_lat, max_lon, max_lat) for real data fetching
-            eps: Epsilon values for ε-dominance per objective
-            road_cost: Cost multiplier for on-road movement
-            offroad_cost: Cost multiplier for off-road movement
-            allow_diagonal: Whether to allow 8-connectivity
-            log_interval: How often to log progress
-            max_expansions: Safety limit on node expansions
+        Initialize A*pex with weights and cost layers.
         """
         self.raster = raster
         self.height, self.width = raster.shape
@@ -210,53 +211,71 @@ class RasterApexSearch:
         self.allow_diagonal = allow_diagonal
         self.log_interval = log_interval
         self.max_expansions = max_expansions
+        self.custom_costmaps = custom_costmaps
+        self.turn_stiffness = turn_stiffness
+        self.h_weight = h_weight
+        self.road_discount = road_discount
         
-        # Objectives: [Distance, Elevation_Change, Slope]
-        self.objective_names = ["distance", "elevation", "slope", "turn_angle"]
-        self.num_objectives = len(self.objective_names)
-        
-        # Load or generate elevation data
-        if elevation_array is not None:
-            print("Using provided elevation data.")
-            self.elevation = elevation_array
-        elif bbox is not None and HAS_ELEVATION_LIB:
-            print(f"Attempting to fetch real elevation data for bbox {bbox}...")
-            try:
-                if _ELEVATION_SOURCE == 'srtm':
-                    self.elevation = _fetch_srtm_elevation(
-                        bbox=tuple(bbox),
-                        target_shape=(self.height, self.width),
-                        resolution=resolution,
-                    )
-                    if self.elevation is None:
-                        raise RuntimeError("SRTM download returned None")
-                else:
-                    self.elevation = extract_elevation(bbox, resolution)
-                print(f"Successfully loaded real elevation data. Range: {self.elevation.min():.1f}m - {self.elevation.max():.1f}m")
-            except Exception as e:
-                print(f"Failed to fetch real elevation: {e}")
-                print("Falling back to synthetic elevation.")
-                self.elevation = self._generate_synthetic_elevation()
-        else:
-            print("No elevation data or bbox provided. Generating synthetic elevation.")
-            self.elevation = self._generate_synthetic_elevation()
+        if custom_costmaps is not None:
+            if custom_objective_names is not None:
+                self.objective_names = custom_objective_names
+            else:
+                self.objective_names = list(custom_costmaps.keys()) + ["turn_angle"]
+            self.num_objectives = len(self.objective_names)
             
-        # Ensure elevation matches raster shape
-        if self.elevation.shape != self.raster.shape:
-             # Resize to match raster if needed (simple crop or pad)
-             print(f"Warning: Elevation shape {self.elevation.shape} != Raster shape {self.raster.shape}")
-             # Detailed resize logic omitted for brevity, assuming correct mostly
-             # Fallback to synthetic if size mismatch is severe
-             if self.elevation.shape[0] < self.height or self.elevation.shape[1] < self.width:
-                 print("Elevation too small, regenerating synthetic.")
-                 self.elevation = self._generate_synthetic_elevation()
-             else:
-                 self.elevation = self.elevation[:self.height, :self.width]
+            # Use original raster properties but verify custom dims
+            for name, arr in custom_costmaps.items():
+                if arr.shape != (self.height, self.width):
+                    print(f"Warning: Costmap {name} shape {arr.shape} != Raster {self.raster.shape}")
+            self.elevation = None
+            self.slope = None
+        else:
+            # Fallback to standard Distance, Elevation, Slope
+            self.objective_names = ["distance", "elevation", "slope", "turn_angle"]
+            self.num_objectives = len(self.objective_names)
+            
+            # Load or generate elevation data
+            if elevation_array is not None:
+                print("Using provided elevation data.")
+                self.elevation = elevation_array
+            elif bbox is not None and HAS_ELEVATION_LIB:
+                print(f"Attempting to fetch real elevation data for bbox {bbox}...")
+                try:
+                    if _ELEVATION_SOURCE == 'srtm':
+                        self.elevation = _fetch_srtm_elevation(
+                            bbox=tuple(bbox),
+                            target_shape=(self.height, self.width),
+                            resolution=resolution,
+                        )
+                        if self.elevation is None:
+                            raise RuntimeError("SRTM download returned None")
+                    else:
+                        self.elevation = extract_elevation(bbox, resolution)
+                    print(f"Successfully loaded real elevation data. Range: {self.elevation.min():.1f}m - {self.elevation.max():.1f}m")
+                except Exception as e:
+                    print(f"Failed to fetch real elevation: {e}")
+                    print("Falling back to synthetic elevation.")
+                    self.elevation = self._generate_synthetic_elevation()
+            else:
+                print("No elevation data or bbox provided. Generating synthetic elevation.")
+                self.elevation = self._generate_synthetic_elevation()
+                
+            # Ensure elevation matches raster shape
+            if self.elevation.shape != self.raster.shape:
+                 # Resize to match raster if needed (simple crop or pad)
+                 print(f"Warning: Elevation shape {self.elevation.shape} != Raster shape {self.raster.shape}")
+                 # Detailed resize logic omitted for brevity, assuming correct mostly
+                 # Fallback to synthetic if size mismatch is severe
+                 if self.elevation.shape[0] < self.height or self.elevation.shape[1] < self.width:
+                     print("Elevation too small, regenerating synthetic.")
+                     self.elevation = self._generate_synthetic_elevation()
+                 else:
+                     self.elevation = self.elevation[:self.height, :self.width]
 
-        # Precompute gradients and slope array
-        self.grad_y, self.grad_x = np.gradient(self.elevation, resolution)
-        self.slope = np.clip(np.sqrt(self.grad_x**2 + self.grad_y**2), 0, 1.0).astype(np.float32)
-        print(f"Slope: mean={np.mean(self.slope)*100:.2f}%, max={np.max(self.slope)*100:.2f}%")
+            # Precompute gradients and slope array
+            self.grad_y, self.grad_x = np.gradient(self.elevation, resolution)
+            self.slope = np.clip(np.sqrt(self.grad_x**2 + self.grad_y**2), 0, 1.0).astype(np.float32)
+            print(f"Slope: mean={np.mean(self.slope)*100:.2f}%, max={np.max(self.slope)*100:.2f}%")
         
         # Search state (reset per search)
         self.stats = SearchStats()
@@ -293,21 +312,28 @@ class RasterApexSearch:
         """
         Admissible heuristic for each objective.
         
-        Returns (h_distance, h_elevation, h_slope, h_turn)
         """
-        # Distance: Euclidean (admissible)
-        h_dist = math.hypot(goal[0] - pos[0], goal[1] - pos[1])
+        h_turn = 0.0  # 0 is admissible (best case = no turns remaining)
         
-        # Elevation: Optimistic lower bound = direct elevation difference
-        h_elev = abs(self.elevation[goal] - self.elevation[pos])
-        
-        # Slope: 0 is admissible (minimum possible slope cost)
-        h_slope = 0.0
-        
-        # Turn angle: 0 is admissible (best case = no turns remaining)
-        h_turn = 0.0
-        
-        return (h_dist, h_elev, h_slope, h_turn)
+        if self.custom_costmaps is not None:
+            # We set this to a dynamic heuristic to provide enough 
+            # goal-bias to reach the target promptly.
+            h_dist = self.h_weight * math.hypot(goal[0] - pos[0], goal[1] - pos[1])
+            h_vals = []
+            for name in self.custom_costmaps.keys():
+                h_vals.append(h_dist)
+            return tuple(h_vals + [h_turn])
+        else:
+            # Distance: Euclidean (admissible)
+            h_dist = math.hypot(goal[0] - pos[0], goal[1] - pos[1])
+            
+            # Elevation: Optimistic lower bound = direct elevation difference
+            h_elev = abs(self.elevation[goal] - self.elevation[pos])
+            
+            # Slope: 0 is admissible (minimum possible slope cost)
+            h_slope = 0.0
+            
+            return (h_dist, h_elev, h_slope, h_turn)
     
     def _get_successors(self, pos: Position, prev_dir: Optional[Tuple[int, int]]
                         ) -> List[Tuple[Position, CostVec, Tuple[int, int]]]:
@@ -331,28 +357,54 @@ class RasterApexSearch:
             neighbor = (nr, nc)
             direction = (dr, dc)
             
-            # Objective 1: Distance
-            dist = math.hypot(dr, dc)
-            terrain_mult = self.road_cost if self.raster[nr, nc] == 1 else self.offroad_cost
-            cost_dist = dist * terrain_mult
-            
-            # Objective 2: Elevation change
-            cost_elev = abs(self.elevation[neighbor] - self.elevation[pos])
-            
-            # Objective 3: Slope at destination cell
-            cost_slope = float(self.slope[nr, nc])
-            
-            # Objective 4: Turn angle (radians between prev and current direction)
+            # Turn angle (radians between prev and current direction)
             if prev_dir is None:
-                cost_turn = 0.0  # First move from source, no turn
+                cost_turn = 0.0
             else:
-                # Angle between vectors using atan2
-                # prev_dir and direction are (dr, dc) tuples
                 dot = prev_dir[0] * dr + prev_dir[1] * dc
                 cross = prev_dir[0] * dc - prev_dir[1] * dr
-                cost_turn = abs(math.atan2(cross, dot))  # 0 = straight, π = U-turn
-            
-            edge_cost = (cost_dist, cost_elev, cost_slope, cost_turn)
+                # Penalty in radians
+                cost_turn = abs(math.atan2(cross, dot))
+                
+                # Apply Stiffness Multiplier to discourage 'odd' wiggling
+                # A 10x multiplier makes a 45-deg turn equivalent to ~8px of construction.
+                cost_turn *= self.turn_stiffness
+                
+                # Hard Constraint: Ban turns >= 90 degrees (Hyperloop Kinematics)
+                if cost_turn / self.turn_stiffness >= 1.5: # 1.5 rad approx 86 deg
+                    continue
+                
+            if self.custom_costmaps is not None:
+                dist = math.hypot(dr, dc)
+                costs = []
+                for name, arr in self.custom_costmaps.items():
+                    # The costmaps are 0-1 normalized, which means 0.0 is completely FREE to cross.
+                    # We must add a base cost of 1.0 so movement never violates physics (distance).
+                    # We map the 0-1 scale to a 1.0x - 10.0x physical multiplier.
+                    base_multiplier = 1.0 + (float(arr[nr, nc]) * 9.0)
+                    
+                    # Apply Road Discount (Road Snapping)
+                    # If this pixel is a road (1), reduce the cost by the discount factor.
+                    if self.raster[nr, nc] == 1:
+                        base_multiplier *= self.road_discount
+                        
+                    cost_val = base_multiplier * dist
+                    costs.append(cost_val)
+                edge_cost = tuple(costs + [cost_turn])
+            else:
+                # Objective 1: Distance
+                dist = math.hypot(dr, dc)
+                terrain_mult = self.road_cost if self.raster[nr, nc] == 1 else self.offroad_cost
+                cost_dist = dist * terrain_mult
+                
+                # Objective 2: Elevation change
+                cost_elev = abs(self.elevation[neighbor] - self.elevation[pos])
+                
+                # Objective 3: Slope at destination cell
+                cost_slope = float(self.slope[nr, nc])
+                
+                edge_cost = (cost_dist, cost_elev, cost_slope, cost_turn)
+                
             successors.append((neighbor, edge_cost, direction))
         
         return successors
@@ -393,6 +445,10 @@ class RasterApexSearch:
         heap: List[Tuple[Tuple[float, ...], int, Label]] = []
         counter = 0
         
+        # Diagnostics
+        self.stats.expansion_map = np.zeros((self.height, self.width), dtype=np.uint32)
+        self.stats.prune_map = np.zeros((self.height, self.width), dtype=np.uint32)
+        
         # Per-state label sets: state -> list of non-dominated g-vectors
         labels: Dict[Position, List[CostVec]] = {}
         
@@ -420,16 +476,29 @@ class RasterApexSearch:
             # Check if ε-dominated by any solution
             if any(v_eps_dominates(sol_cost, label.f, self.eps) for _, sol_cost in solutions):
                 self.stats.labels_pruned += 1
+                self.stats.prune_map[pos] += 1
                 continue
             
             expansions += 1
             self.stats.nodes_expanded = expansions
+            self.stats.expansion_map[pos] += 1
             
             # Logging
             if expansions % self.log_interval == 0:
                 elapsed = time.time() - start_time
                 self.stats.log_iteration(expansions, expansions, len(solutions), 
                                           len(heap), elapsed)
+                
+                # Capture diagnostic frame for animation
+                # Store a copy of the expansion map and the set of goal-proximate frontier nodes
+                self.stats.diagnostic_frames.append({
+                    'expansions': expansions,
+                    'expansion_map_sample': self.stats.expansion_map.copy(),
+                    'frontier_nodes': [label.state for _, _, label in heap[::max(1, len(heap)//500)]], # Sample frontier for speed
+                    'solutions_count': len(solutions),
+                    'elapsed': elapsed
+                })
+                
                 print(f"  Expanded: {expansions:,} | Solutions: {len(solutions)} | "
                       f"Queue: {len(heap):,} | Time: {elapsed:.1f}s")
             
@@ -478,6 +547,7 @@ class RasterApexSearch:
                 
                 if skip:
                     self.stats.labels_pruned += 1
+                    self.stats.prune_map[neighbor] += 1
                     continue
                 
                 # Remove labels dominated by the new one
@@ -527,7 +597,7 @@ class RasterApexSearch:
         
         output = {
             "algorithm": "A*pex Pure Multi-Objective",
-            "objectives": list(self.OBJECTIVES),
+            "objectives": list(self.objective_names),
             "epsilon": list(self.eps),
             "statistics": stats.to_dict(),
             "solutions": [s.to_dict() for s in solutions]
