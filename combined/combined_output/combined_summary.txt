@@ -1,0 +1,14 @@
+APEX Pareto analysis
+  Pareto-optimal candidates : 5
+  Dominated candidates      : 6
+  Ideal   (construction, environmental, geometry): (390.23, 270.44, 27.86)
+  Nadir                                         : (502.77, 371.44, 59.17)
+
+  Ranked Pareto candidates (closest-to-ideal first):
+    rank  1  id= 8  constr=411.3  env=338.0  geo=43.4  dist=0.285 <-- BEST
+    rank  2  id= 5  constr=390.2  env=342.0  geo=50.4  dist=0.337
+    rank  3  id= 7  constr=422.5  env=270.4  geo=59.2  dist=0.347
+    rank  4  id= 2  constr=459.0  env=319.0  geo=54.1  dist=0.381
+    rank  5  id=11  constr=502.8  env=371.4  geo=27.9  dist=0.471
+
+Total runtime: 69.18s
