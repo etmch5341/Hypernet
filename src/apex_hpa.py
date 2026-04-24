@@ -37,10 +37,10 @@ Pos  = Tuple[int, int]              # (row, col)
 # Config
 # ---------------------------------------------------------------------------
 DEFAULT_CLUSTER_SIZE   = 0       # 0 = auto-scale to 10% of map
-GATEWAY_MAX_COMPOSITE  = 0.6     # Clever bridge: non-road pixels valid if composite cost < 0.6
+GATEWAY_MAX_COMPOSITE  = 0.4     # Tightened from 0.6: only bridge across extremely cheap terrain
 ALLOW_DIAGONAL         = True
 ON_ROAD_COST           = 1.0
-OFF_ROAD_COST          = 2.0     # Lowered from 5.0 to allow corner-cutting
+OFF_ROAD_COST          = 3.0     # Increased from 2.0 to make roads more attractive
 MAX_ABSTRACT_EXPANSIONS = 500_000
 
 DIRS_8 = [(0,1),(0,-1),(1,0),(-1,0),(1,1),(1,-1),(-1,1),(-1,-1)]
