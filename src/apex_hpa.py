@@ -36,8 +36,8 @@ Pos  = Tuple[int, int]              # (row, col)
 # ---------------------------------------------------------------------------
 # Config
 # ---------------------------------------------------------------------------
-DEFAULT_CLUSTER_SIZE   = 80      # Increased for scale
-GATEWAY_ROAD_REQUIRED  = True    # gateways only on road cells (road bitmap == 1)
+DEFAULT_CLUSTER_SIZE   = 0       # 0 = auto-scale to 10% of map
+GATEWAY_MAX_COMPOSITE  = 0.6     # Clever bridge: non-road pixels valid if composite cost < 0.6
 ALLOW_DIAGONAL         = True
 ON_ROAD_COST           = 1.0
 OFF_ROAD_COST          = 2.0     # Lowered from 5.0 to allow corner-cutting
@@ -139,7 +139,8 @@ def _run_local_astar(start: Pos, goal: Pos,
         for dr, dc in DIRS_8:
             nr, nc = curr[0]+dr, curr[1]+dc
             if not (rmin <= nr < rmax and cmin <= nc < cmax): continue
-            step_penalty = OFF_ROAD_COST if GATEWAY_ROAD_REQUIRED and road_bitmap[nr, nc] != 1 else ON_ROAD_COST
+            # Modified penalty: no strict road requirement, just penalize off-road
+            step_penalty = OFF_ROAD_COST if road_bitmap[nr, nc] != 1 else ON_ROAD_COST
             step_g = g + math.hypot(dr, dc) * (composite[nr, nc] + step_penalty * 0.1)
             nb = (nr, nc)
             if step_g < gscore.get(nb, float('inf')):
@@ -153,18 +154,22 @@ def local_3d_pareto(start: Pos, goal: Pos,
                     cost_maps: Tuple[np.ndarray, np.ndarray, np.ndarray],
                     road_bitmap: np.ndarray,
                     bounds: Optional[Tuple[int,int,int,int]] = None) -> List[Tuple[List[Pos], Vec3]]:
-    """Runs local A* twice to extract a bounded Pareto front (up to 2 distinct paths)."""
+    """Runs local A* with 5 distinct personality profiles to get up to 5 Pareto paths."""
     results = []
-    # Profile 1: Balanced
-    p1, v1 = _run_local_astar(start, goal, cost_maps, (0.33, 0.33, 0.33), road_bitmap, bounds)
-    if p1 and v1:
-        results.append((p1, v1))
+    profiles = [
+        (0.33, 0.33, 0.33), # Balanced
+        (0.80, 0.10, 0.10), # Construction focus
+        (0.10, 0.80, 0.10), # Environment focus
+        (0.10, 0.10, 0.80), # Geometry focus
+        (0.45, 0.45, 0.10)  # Eco-Build (ignores geometry)
+    ]
     
-    # Profile 2: Geometry-focused (cheaper turns/terrain)
-    p2, v2 = _run_local_astar(start, goal, cost_maps, (0.1, 0.1, 0.8), road_bitmap, bounds)
-    if p2 and v2:
-        if v2 != v1 and not all(x <= (1.0 + 0.01) * y for x, y in zip(v1, v2)):
-            results.append((p2, v2))
+    for weights in profiles:
+        p, v = _run_local_astar(start, goal, cost_maps, weights, road_bitmap, bounds)
+        if p and v:
+            # Only add if it's uniquely valuable (not strongly dominated by an existing profile)
+            if not any(v == ev for _, ev in results) and not any(all(x <= (1.0 + 0.01) * y for x, y in zip(ev, v)) for _, ev in results):
+                results.append((p, v))
             
     return results
 
@@ -180,8 +185,13 @@ class HierarchicalGraph3D:
         self.grid      = road_bitmap
         self.cost_maps = cost_maps
         self.composite = composite_cost(cost_maps)
-        self.c_size    = max(1, int(cluster_size))
         self.height, self.width = road_bitmap.shape
+        
+        if cluster_size <= 0:
+            self.c_size = max(10, max(self.height, self.width) // 10)
+        else:
+            self.c_size = max(1, int(cluster_size))
+            
         self.verbose   = verbose
 
         self.nodes: Dict[Pos, List[Tuple[Pos, Vec3]]] = defaultdict(list)
@@ -220,7 +230,11 @@ class HierarchicalGraph3D:
             if not (0 <= ra < self.height and 0 <= ca < self.width and
                     0 <= rb < self.height and 0 <= cb < self.width):
                 continue
-            if self.grid[ra, ca] == 1 and self.grid[rb, cb] == 1:
+            cost_a = float(self.composite[ra, ca])
+            cost_b = float(self.composite[rb, cb])
+            
+            # Clever Gateway: Valid if it's a road OR if the terrain is cheap enough to bridge across
+            if (self.grid[ra, ca] == 1 and self.grid[rb, cb] == 1) or (cost_a < GATEWAY_MAX_COMPOSITE and cost_b < GATEWAY_MAX_COMPOSITE):
                 segment.append(((ra, ca), (rb, cb)))
             else:
                 if segment:

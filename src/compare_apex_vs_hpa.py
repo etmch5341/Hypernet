@@ -349,7 +349,8 @@ def main():
         description="Compare Plain APEX vs APEX+HPA* on the same raster")
     parser.add_argument("--city", default="austin",
                         choices=list(CITY_RASTERS.keys()))
-    parser.add_argument("--cluster-size",   type=int,   default=80)
+    parser.add_argument("--cluster-size",   type=int,   default=0,
+                        help="0 = auto-scale to 10% of map width/height")
     parser.add_argument("--apex-eps",       type=float, default=0.1,
                         help="ε for both APEX searches (default 0.1)")
     parser.add_argument("--filter-eps",     type=float, default=0.05,

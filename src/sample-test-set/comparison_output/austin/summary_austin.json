@@ -1,7 +1,7 @@
 {
   "city": "austin",
   "plain_apex": {
-    "elapsed_s": 113.10426592826843,
+    "elapsed_s": 111.3924150466919,
     "expansions": 5000000,
     "pareto_count": 1,
     "objectives": [
@@ -19,19 +19,19 @@
     "best_waypoints": 899
   },
   "apex_hpa": {
-    "elapsed_s": 5.960855007171631,
-    "pareto_count": 5,
+    "elapsed_s": 2.011505126953125,
+    "pareto_count": 1,
     "objectives": [
       "construction",
       "environmental",
       "geometry"
     ],
     "best_cost": [
-      398.732619303769,
-      262.94963025007263,
-      50.62009574757149
+      353.47540599476815,
+      247.88355886755124,
+      72.66267409827908
     ],
-    "best_waypoints": 842
+    "best_waypoints": 768
   },
-  "speedup_x": 18.974503790511644
+  "speedup_x": 55.37764411041828
 }
