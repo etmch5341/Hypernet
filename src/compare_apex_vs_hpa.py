@@ -66,12 +66,25 @@ def pick_best_pareto(solutions, objective_names):
 # Run plain APEX
 # ---------------------------------------------------------------------------
 
-def run_plain_apex(raster, goals, cost_maps, eps, max_expansions):
+# Per-city tuned settings matching the original run_apex_all.py config
+APEX_CITY_CONFIG = {
+    "austin":   {"eps": (0.1, 0.1, 0.1, 0.3), "max_expansions": 5_000_000},
+    "seattle":  {"eps": (0.1, 0.1, 0.1, 0.1), "max_expansions":   500_000},
+    "portland": {"eps": (0.1, 0.1, 0.1, 0.5), "max_expansions": 5_000_000},
+}
+
+
+def run_plain_apex(raster, goals, city, bbox=None, eps_override=None,
+                   max_exp_override=None):
     """
-    Run RasterApexSearch with the 3 real cost maps as custom objectives.
-    plain APEX searches the full pixel grid directly (no hierarchy).
+    Run RasterApexSearch exactly as run_apex_all.py does:
+      - Native objectives: distance, elevation, slope, turn_angle
+      - Synthetic elevation (no real SRTM needed)
+      - Per-city tuned eps and max_expansions
     """
-    construction, environmental, geometry = cost_maps
+    cfg = APEX_CITY_CONFIG.get(city, APEX_CITY_CONFIG["austin"])
+    eps          = eps_override or cfg["eps"]
+    max_expansions = max_exp_override or cfg["max_expansions"]
     source, target = goals[0], goals[-1]
 
     print(f"\n{'='*60}")
@@ -82,19 +95,15 @@ def run_plain_apex(raster, goals, cost_maps, eps, max_expansions):
     print(f"  Grid   : {raster.shape}")
     print(f"  ε      : {eps}")
     print(f"  Max exp: {max_expansions:,}")
+    print(f"  Objectives: distance, elevation, slope, turn_angle")
 
     searcher = RasterApexSearch(
         raster=raster,
+        bbox=bbox,          # lets it use real elevation if available
         eps=eps,
         max_expansions=max_expansions,
-        custom_costmaps={
-            "construction":  construction,
-            "environmental": environmental,
-            "geometry":      geometry,
-        },
-        custom_objective_names=["construction", "environmental", "geometry", "turn_angle"],
-        h_weight=1.0,
-        road_discount=0.6,   # reward on-road movement
+        log_interval=50_000,
+        # No custom_costmaps → uses native distance/elevation/slope objectives
     )
 
     t0 = time.time()
@@ -304,8 +313,8 @@ def visualize_comparison(result_apex, result_hpa, raster, output_dir, city):
             if best is None:
                 return "No solution"
             o = best.objectives
-            return (f"constr={o[0]:.1f}  env={o[1]:.1f}  "
-                    f"geo={o[2]:.1f}  waypts={len(best.path)}")
+            return (f"dist={o[0]:.1f}  elev={o[1]:.1f}  "
+                    f"slope={o[2]:.3f}  waypts={len(best.path)}")
         else:
             b = result["best"]
             if b is None:
@@ -371,9 +380,7 @@ def main():
 
     # Run both algorithms
     result_apex = run_plain_apex(
-        raster, goals, cost_maps,
-        eps=tuple([args.apex_eps] * 3),
-        max_expansions=args.apex_max_exp,
+        raster, goals, city=args.city, bbox=bbox,
     )
 
     result_hpa = run_apex_hpa_wrapper(
@@ -402,9 +409,11 @@ def main():
 
     if apex_best:
         o = apex_best.objectives
+        names = ["distance", "elevation", "slope", "turn"]
         print(f"\n  Plain APEX best path:")
-        print(f"    construction={o[0]:.1f}  environmental={o[1]:.1f}  "
-              f"geometry={o[2]:.1f}  waypoints={len(apex_best.path)}")
+        for nm, val in zip(names, o):
+            print(f"    {nm}={val:.2f}", end="  ")
+        print(f"  waypoints={len(apex_best.path)}")
     if hpa_best:
         cv = hpa_best["cost_vector"]
         print(f"\n  APEX+HPA* best path:")
@@ -420,16 +429,18 @@ def main():
     summary = {
         "city":   args.city,
         "plain_apex": {
-            "elapsed_s":    result_apex["elapsed"],
-            "expansions":   result_apex["expansions"],
-            "pareto_count": result_apex["pareto_count"],
-            "best_cost":    list(apex_best.objectives[:3]) if apex_best else None,
+            "elapsed_s":      result_apex["elapsed"],
+            "expansions":     result_apex["expansions"],
+            "pareto_count":   result_apex["pareto_count"],
+            "objectives":     ["distance", "elevation", "slope", "turn_angle"],
+            "best_cost":      [float(v) for v in apex_best.objectives] if apex_best else None,
             "best_waypoints": len(apex_best.path) if apex_best else None,
         },
         "apex_hpa": {
-            "elapsed_s":    result_hpa["elapsed"],
-            "pareto_count": result_hpa["pareto_count"],
-            "best_cost":    list(hpa_best["cost_vector"]) if hpa_best else None,
+            "elapsed_s":      result_hpa["elapsed"],
+            "pareto_count":   result_hpa["pareto_count"],
+            "objectives":     ["construction", "environmental", "geometry"],
+            "best_cost":      list(hpa_best["cost_vector"]) if hpa_best else None,
             "best_waypoints": len(hpa_best["path"]) if hpa_best else None,
         },
         "speedup_x": speedup,
