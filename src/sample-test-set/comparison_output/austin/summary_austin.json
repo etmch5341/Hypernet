@@ -1,9 +1,9 @@
 {
   "city": "austin",
   "plain_apex": {
-    "elapsed_s": 171.91400694847107,
+    "elapsed_s": 113.93739628791809,
     "expansions": 5000000,
-    "pareto_count": 3,
+    "pareto_count": 1,
     "objectives": [
       "distance",
       "elevation",
@@ -11,27 +11,27 @@
       "turn_angle"
     ],
     "best_cost": [
-      1181.915872327541,
-      1145.0,
-      50.708889715373516,
+      1131.9158723275411,
+      1181.0,
+      46.28543351776898,
       409.97784129347235
     ],
-    "best_waypoints": 904
+    "best_waypoints": 899
   },
   "apex_hpa": {
-    "elapsed_s": 3.680082082748413,
-    "pareto_count": 2,
+    "elapsed_s": 2.4537429809570312,
+    "pareto_count": 1,
     "objectives": [
       "construction",
       "environmental",
       "geometry"
     ],
     "best_cost": [
-      387.42352860424404,
-      292.00596328460404,
-      67.20992644899333
+      379.09849005394386,
+      260.4018855549708,
+      74.01317336115544
     ],
-    "best_waypoints": 830
+    "best_waypoints": 869
   },
-  "speedup_x": 46.714720781466845
+  "speedup_x": 46.43412010636875
 }

@@ -40,7 +40,7 @@ DEFAULT_CLUSTER_SIZE   = 40
 GATEWAY_ROAD_REQUIRED  = True    # gateways only on road cells (road bitmap == 1)
 ALLOW_DIAGONAL         = True
 ON_ROAD_COST           = 1.0
-OFF_ROAD_COST          = 5.0
+OFF_ROAD_COST          = 2.0   # Lowered from 5.0 to allow corner-cutting
 MAX_ABSTRACT_EXPANSIONS = 500_000
 
 DIRS_8 = [(0,1),(0,-1),(1,0),(-1,0),(1,1),(1,-1),(-1,1),(-1,-1)]

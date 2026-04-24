@@ -184,7 +184,7 @@ class RasterApexSearch:
         bbox: Optional[Tuple[float, float, float, float]] = None,
         eps: Tuple[float, ...] = (0.01, 0.01, 0.01),
         road_cost: float = 1.0,
-        offroad_cost: float = 5.0,
+        offroad_cost: float = 2.0,  # Lowered from 5.0 to allow corner-cutting
         allow_diagonal: bool = True,
         log_interval: int = 10000,
         max_expansions: int = 1_000_000,
