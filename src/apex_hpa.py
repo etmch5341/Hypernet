@@ -52,7 +52,14 @@ DIRS_8 = [(0,1),(0,-1),(1,0),(-1,0),(1,1),(1,-1),(-1,1),(-1,-1)]
 
 def load_cost_maps(project_root: str):
     """Load the 3 normalised cost layers from npz-files/."""
-    npz = os.path.join(project_root, "npz-files")
+    # Cost maps may live at project root or in npz-files/ — check both.
+    for candidate_dir in [project_root, os.path.join(project_root, "npz-files")]:
+        if os.path.exists(os.path.join(candidate_dir, "austin_construction_cost.npz")):
+            npz = candidate_dir
+            break
+    else:
+        raise FileNotFoundError(
+            f"Cannot find austin_construction_cost.npz under {project_root}")
 
     d = np.load(os.path.join(npz, "austin_construction_cost.npz"), allow_pickle=True)
     construction = d["cost_map_normalized"].astype(np.float64)
