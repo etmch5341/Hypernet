@@ -1,0 +1,21 @@
+{
+  "city": "austin",
+  "plain_apex": {
+    "elapsed_s": 6.086052894592285,
+    "expansions": 500000,
+    "pareto_count": 0,
+    "best_cost": null,
+    "best_waypoints": null
+  },
+  "apex_hpa": {
+    "elapsed_s": 4.365169048309326,
+    "pareto_count": 2,
+    "best_cost": [
+      387.42352860424404,
+      292.00596328460404,
+      67.20992644899333
+    ],
+    "best_waypoints": 830
+  },
+  "speedup_x": 1.3942307450726277
+}
